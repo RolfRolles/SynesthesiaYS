@@ -1,0 +1,3977 @@
+; TODO: daa, das, aaa, aas, imul (2), lea, sahf, lahf, GROUP: mov Eb, Ib for ggg = 0, GROUP: mov Ev, Iz for ggg = 0, aam Ib, aad Ib, salc
+
+; Loosen yices' arbitrary restriction on iteration count. (')
+(set-param ef-max-iters 1000)
+
+; Data types used throughout the formula.
+(define-type Bit          (bitvector  1))
+(define-type Byte         (bitvector  8))
+(define-type Word         (bitvector 16))
+(define-type Dword        (bitvector 32))
+
+(define-type RegIdx       (bitvector  3))
+(define EaxIdx::RegIdx (mk-bv 3 0)) (define AxIdx::RegIdx (mk-bv 3 0)) (define ALIdx::RegIdx (mk-bv 3 0)) ; EAX/AX/AL = 0
+(define EcxIdx::RegIdx (mk-bv 3 1)) (define CxIdx::RegIdx (mk-bv 3 1)) (define CLIdx::RegIdx (mk-bv 3 1)) ; ECX/CX/CL = 1
+(define EdxIdx::RegIdx (mk-bv 3 2)) (define DxIdx::RegIdx (mk-bv 3 2)) (define DLIdx::RegIdx (mk-bv 3 2)) ; EDX/DX/DL = 2
+(define EbxIdx::RegIdx (mk-bv 3 3)) (define BxIdx::RegIdx (mk-bv 3 3)) (define BLIdx::RegIdx (mk-bv 3 3)) ; EBX/BX/BL = 3
+(define EspIdx::RegIdx (mk-bv 3 4)) (define SpIdx::RegIdx (mk-bv 3 4)) (define AHIdx::RegIdx (mk-bv 3 4)) ; ESP/SP/AH = 4
+(define EbpIdx::RegIdx (mk-bv 3 5)) (define BpIdx::RegIdx (mk-bv 3 5)) (define CHIdx::RegIdx (mk-bv 3 5)) ; EBP/BP/CH = 5
+(define EsiIdx::RegIdx (mk-bv 3 6)) (define SiIdx::RegIdx (mk-bv 3 6)) (define DHIdx::RegIdx (mk-bv 3 6)) ; ESI/SI/DH = 6
+(define EdiIdx::RegIdx (mk-bv 3 7)) (define DiIdx::RegIdx (mk-bv 3 7)) (define BHIdx::RegIdx (mk-bv 3 7)) ; EDI/DI/BH = 7
+
+(define-type FlagIdx      (bitvector  3))
+(define CFIdx::RegIdx (mk-bv 3 0)) ; CF = 0
+(define PFIdx::RegIdx (mk-bv 3 1)) ; PF = 1
+(define AFIdx::RegIdx (mk-bv 3 2)) ; AF = 2
+(define ZFIdx::RegIdx (mk-bv 3 3)) ; ZF = 3
+(define SFIdx::RegIdx (mk-bv 3 4)) ; SF = 4
+(define DFIdx::RegIdx (mk-bv 3 5)) ; DF = 5
+(define OFIdx::RegIdx (mk-bv 3 6)) ; OF = 6
+
+(define-type Reg32State   (bitvector 256))
+(define-type MachineState (bitvector 264))
+(define-type MachineStateRes8 (bitvector 272))
+(define-type MachineStateRes16 (bitvector 280))
+(define-type MachineStateRes32 (bitvector 296))
+(define-type DecodedMachineState (bitvector 268))
+
+(define NumInstrs::Byte)
+(define bytecode00::Byte) (define bytecode01::Byte)
+(define bytecode02::Byte) (define bytecode03::Byte)
+(define bytecode04::Byte) (define bytecode05::Byte)
+(define bytecode06::Byte) (define bytecode07::Byte)
+(define bytecode08::Byte) (define bytecode09::Byte)
+(define bytecode0A::Byte) (define bytecode0B::Byte)
+(define bytecode0C::Byte) (define bytecode0D::Byte)
+(define bytecode0E::Byte) (define bytecode0F::Byte)
+(define bytecode10::Byte) (define bytecode11::Byte)
+(define bytecode12::Byte) (define bytecode13::Byte)
+(define bytecode14::Byte) (define bytecode15::Byte)
+(define bytecode16::Byte) (define bytecode17::Byte)
+(define bytecode18::Byte) (define bytecode19::Byte)
+(define bytecode1A::Byte) (define bytecode1B::Byte)
+(define bytecode1C::Byte) (define bytecode1D::Byte)
+(define bytecode1E::Byte) (define bytecode1F::Byte)
+(define bytecode20::Byte) (define bytecode21::Byte)
+(define bytecode22::Byte) (define bytecode23::Byte)
+(define bytecode24::Byte) (define bytecode25::Byte)
+(define bytecode26::Byte) (define bytecode27::Byte)
+(define bytecode28::Byte) (define bytecode29::Byte)
+(define bytecode2A::Byte) (define bytecode2B::Byte)
+(define bytecode2C::Byte) (define bytecode2D::Byte)
+(define bytecode2E::Byte) (define bytecode2F::Byte)
+(define bytecode30::Byte) (define bytecode31::Byte)
+(define bytecode32::Byte) (define bytecode33::Byte)
+(define bytecode34::Byte) (define bytecode35::Byte)
+(define bytecode36::Byte) (define bytecode37::Byte)
+(define bytecode38::Byte) (define bytecode39::Byte)
+(define bytecode3A::Byte) (define bytecode3B::Byte)
+(define bytecode3C::Byte) (define bytecode3D::Byte)
+(define bytecode3E::Byte) (define bytecode3F::Byte)
+(define bytecode40::Byte) (define bytecode41::Byte)
+(define bytecode42::Byte) (define bytecode43::Byte)
+(define bytecode44::Byte) (define bytecode45::Byte)
+(define bytecode46::Byte) (define bytecode47::Byte)
+(define bytecode48::Byte) (define bytecode49::Byte)
+(define bytecode4A::Byte) (define bytecode4B::Byte)
+(define bytecode4C::Byte) (define bytecode4D::Byte)
+(define bytecode4E::Byte) (define bytecode4F::Byte)
+(define bytecode50::Byte) (define bytecode51::Byte)
+(define bytecode52::Byte) (define bytecode53::Byte)
+(define bytecode54::Byte) (define bytecode55::Byte)
+(define bytecode56::Byte) (define bytecode57::Byte)
+(define bytecode58::Byte) (define bytecode59::Byte)
+(define bytecode5A::Byte) (define bytecode5B::Byte)
+(define bytecode5C::Byte) (define bytecode5D::Byte)
+(define bytecode5E::Byte) (define bytecode5F::Byte)
+(define bytecode60::Byte) (define bytecode61::Byte)
+(define bytecode62::Byte) (define bytecode63::Byte)
+(define bytecode64::Byte) (define bytecode65::Byte)
+(define bytecode66::Byte) (define bytecode67::Byte)
+(define bytecode68::Byte) (define bytecode69::Byte)
+(define bytecode6A::Byte) (define bytecode6B::Byte)
+(define bytecode6C::Byte) (define bytecode6D::Byte)
+(define bytecode6E::Byte) (define bytecode6F::Byte)
+(define bytecode70::Byte) (define bytecode71::Byte)
+(define bytecode72::Byte) (define bytecode73::Byte)
+(define bytecode74::Byte) (define bytecode75::Byte)
+(define bytecode76::Byte) (define bytecode77::Byte)
+(define bytecode78::Byte) (define bytecode79::Byte)
+(define bytecode7A::Byte) (define bytecode7B::Byte)
+(define bytecode7C::Byte) (define bytecode7D::Byte)
+(define bytecode7E::Byte) (define bytecode7F::Byte)
+(define bytecode80::Byte) (define bytecode81::Byte)
+(define bytecode82::Byte) (define bytecode83::Byte)
+(define bytecode84::Byte) (define bytecode85::Byte)
+(define bytecode86::Byte) (define bytecode87::Byte)
+(define bytecode88::Byte) (define bytecode89::Byte)
+(define bytecode8A::Byte) (define bytecode8B::Byte)
+(define bytecode8C::Byte) (define bytecode8D::Byte)
+(define bytecode8E::Byte) (define bytecode8F::Byte)
+(define bytecode90::Byte) (define bytecode91::Byte)
+(define bytecode92::Byte) (define bytecode93::Byte)
+(define bytecode94::Byte) (define bytecode95::Byte)
+(define bytecode96::Byte) (define bytecode97::Byte)
+(define bytecode98::Byte) (define bytecode99::Byte)
+(define bytecode9A::Byte) (define bytecode9B::Byte)
+(define bytecode9C::Byte) (define bytecode9D::Byte)
+(define bytecode9E::Byte) (define bytecode9F::Byte)
+(define bytecodeA0::Byte) (define bytecodeA1::Byte)
+(define bytecodeA2::Byte) (define bytecodeA3::Byte)
+(define bytecodeA4::Byte) (define bytecodeA5::Byte)
+(define bytecodeA6::Byte) (define bytecodeA7::Byte)
+(define bytecodeA8::Byte) (define bytecodeA9::Byte)
+(define bytecodeAA::Byte) (define bytecodeAB::Byte)
+(define bytecodeAC::Byte) (define bytecodeAD::Byte)
+(define bytecodeAE::Byte) (define bytecodeAF::Byte)
+(define bytecodeB0::Byte) (define bytecodeB1::Byte)
+(define bytecodeB2::Byte) (define bytecodeB3::Byte)
+(define bytecodeB4::Byte) (define bytecodeB5::Byte)
+(define bytecodeB6::Byte) (define bytecodeB7::Byte)
+(define bytecodeB8::Byte) (define bytecodeB9::Byte)
+(define bytecodeBA::Byte) (define bytecodeBB::Byte)
+(define bytecodeBC::Byte) (define bytecodeBD::Byte)
+(define bytecodeBE::Byte) (define bytecodeBF::Byte)
+(define bytecodeC0::Byte) (define bytecodeC1::Byte)
+(define bytecodeC2::Byte) (define bytecodeC3::Byte)
+(define bytecodeC4::Byte) (define bytecodeC5::Byte)
+(define bytecodeC6::Byte) (define bytecodeC7::Byte)
+(define bytecodeC8::Byte) (define bytecodeC9::Byte)
+(define bytecodeCA::Byte) (define bytecodeCB::Byte)
+(define bytecodeCC::Byte) (define bytecodeCD::Byte)
+(define bytecodeCE::Byte) (define bytecodeCF::Byte)
+(define bytecodeD0::Byte) (define bytecodeD1::Byte)
+(define bytecodeD2::Byte) (define bytecodeD3::Byte)
+(define bytecodeD4::Byte) (define bytecodeD5::Byte)
+(define bytecodeD6::Byte) (define bytecodeD7::Byte)
+(define bytecodeD8::Byte) (define bytecodeD9::Byte)
+(define bytecodeDA::Byte) (define bytecodeDB::Byte)
+(define bytecodeDC::Byte) (define bytecodeDD::Byte)
+(define bytecodeDE::Byte) (define bytecodeDF::Byte)
+(define bytecodeE0::Byte) (define bytecodeE1::Byte)
+(define bytecodeE2::Byte) (define bytecodeE3::Byte)
+(define bytecodeE4::Byte) (define bytecodeE5::Byte)
+(define bytecodeE6::Byte) (define bytecodeE7::Byte)
+(define bytecodeE8::Byte) (define bytecodeE9::Byte)
+(define bytecodeEA::Byte) (define bytecodeEB::Byte)
+(define bytecodeEC::Byte) (define bytecodeED::Byte)
+(define bytecodeEE::Byte) (define bytecodeEF::Byte)
+(define bytecodeF0::Byte) (define bytecodeF1::Byte)
+(define bytecodeF2::Byte) (define bytecodeF3::Byte)
+(define bytecodeF4::Byte) (define bytecodeF5::Byte)
+(define bytecodeF6::Byte) (define bytecodeF7::Byte)
+(define bytecodeF8::Byte) (define bytecodeF9::Byte)
+(define bytecodeFA::Byte) (define bytecodeFB::Byte)
+(define bytecodeFC::Byte) (define bytecodeFD::Byte)
+(define bytecodeFE::Byte) (define bytecodeFF::Byte)
+
+; Used instead of an array lookup. Pass in byte XX, get back the bytecodeXX
+; variable.
+(define get-byte::(-> Byte Byte) 
+	(lambda (x::Byte)
+    (ite (= x 0x00) bytecode00
+    (ite (= x 0x01) bytecode01
+    (ite (= x 0x02) bytecode02
+    (ite (= x 0x03) bytecode03
+    (ite (= x 0x04) bytecode04
+    (ite (= x 0x05) bytecode05
+    (ite (= x 0x06) bytecode06
+    (ite (= x 0x07) bytecode07
+    (ite (= x 0x08) bytecode08
+    (ite (= x 0x09) bytecode09
+    (ite (= x 0x0A) bytecode0A
+    (ite (= x 0x0B) bytecode0B
+    (ite (= x 0x0C) bytecode0C
+    (ite (= x 0x0D) bytecode0D
+    (ite (= x 0x0E) bytecode0E
+    (ite (= x 0x0F) bytecode0F
+    (ite (= x 0x10) bytecode10
+    (ite (= x 0x11) bytecode11
+    (ite (= x 0x12) bytecode12
+    (ite (= x 0x13) bytecode13
+    (ite (= x 0x14) bytecode14
+    (ite (= x 0x15) bytecode15
+    (ite (= x 0x16) bytecode16
+    (ite (= x 0x17) bytecode17
+    (ite (= x 0x18) bytecode18
+    (ite (= x 0x19) bytecode19
+    (ite (= x 0x1A) bytecode1A
+    (ite (= x 0x1B) bytecode1B
+    (ite (= x 0x1C) bytecode1C
+    (ite (= x 0x1D) bytecode1D
+    (ite (= x 0x1E) bytecode1E
+    (ite (= x 0x1F) bytecode1F
+    (ite (= x 0x20) bytecode20
+    (ite (= x 0x21) bytecode21
+    (ite (= x 0x22) bytecode22
+    (ite (= x 0x23) bytecode23
+    (ite (= x 0x24) bytecode24
+    (ite (= x 0x25) bytecode25
+    (ite (= x 0x26) bytecode26
+    (ite (= x 0x27) bytecode27
+    (ite (= x 0x28) bytecode28
+    (ite (= x 0x29) bytecode29
+    (ite (= x 0x2A) bytecode2A
+    (ite (= x 0x2B) bytecode2B
+    (ite (= x 0x2C) bytecode2C
+    (ite (= x 0x2D) bytecode2D
+    (ite (= x 0x2E) bytecode2E
+    (ite (= x 0x2F) bytecode2F
+    (ite (= x 0x30) bytecode30
+    (ite (= x 0x31) bytecode31
+    (ite (= x 0x32) bytecode32
+    (ite (= x 0x33) bytecode33
+    (ite (= x 0x34) bytecode34
+    (ite (= x 0x35) bytecode35
+    (ite (= x 0x36) bytecode36
+    (ite (= x 0x37) bytecode37
+    (ite (= x 0x38) bytecode38
+    (ite (= x 0x39) bytecode39
+    (ite (= x 0x3A) bytecode3A
+    (ite (= x 0x3B) bytecode3B
+    (ite (= x 0x3C) bytecode3C
+    (ite (= x 0x3D) bytecode3D
+    (ite (= x 0x3E) bytecode3E
+    (ite (= x 0x3F) bytecode3F
+    (ite (= x 0x40) bytecode40
+    (ite (= x 0x41) bytecode41
+    (ite (= x 0x42) bytecode42
+    (ite (= x 0x43) bytecode43
+    (ite (= x 0x44) bytecode44
+    (ite (= x 0x45) bytecode45
+    (ite (= x 0x46) bytecode46
+    (ite (= x 0x47) bytecode47
+    (ite (= x 0x48) bytecode48
+    (ite (= x 0x49) bytecode49
+    (ite (= x 0x4A) bytecode4A
+    (ite (= x 0x4B) bytecode4B
+    (ite (= x 0x4C) bytecode4C
+    (ite (= x 0x4D) bytecode4D
+    (ite (= x 0x4E) bytecode4E
+    (ite (= x 0x4F) bytecode4F
+    (ite (= x 0x50) bytecode50
+    (ite (= x 0x51) bytecode51
+    (ite (= x 0x52) bytecode52
+    (ite (= x 0x53) bytecode53
+    (ite (= x 0x54) bytecode54
+    (ite (= x 0x55) bytecode55
+    (ite (= x 0x56) bytecode56
+    (ite (= x 0x57) bytecode57
+    (ite (= x 0x58) bytecode58
+    (ite (= x 0x59) bytecode59
+    (ite (= x 0x5A) bytecode5A
+    (ite (= x 0x5B) bytecode5B
+    (ite (= x 0x5C) bytecode5C
+    (ite (= x 0x5D) bytecode5D
+    (ite (= x 0x5E) bytecode5E
+    (ite (= x 0x5F) bytecode5F
+    (ite (= x 0x60) bytecode60
+    (ite (= x 0x61) bytecode61
+    (ite (= x 0x62) bytecode62
+    (ite (= x 0x63) bytecode63
+    (ite (= x 0x64) bytecode64
+    (ite (= x 0x65) bytecode65
+    (ite (= x 0x66) bytecode66
+    (ite (= x 0x67) bytecode67
+    (ite (= x 0x68) bytecode68
+    (ite (= x 0x69) bytecode69
+    (ite (= x 0x6A) bytecode6A
+    (ite (= x 0x6B) bytecode6B
+    (ite (= x 0x6C) bytecode6C
+    (ite (= x 0x6D) bytecode6D
+    (ite (= x 0x6E) bytecode6E
+    (ite (= x 0x6F) bytecode6F
+    (ite (= x 0x70) bytecode70
+    (ite (= x 0x71) bytecode71
+    (ite (= x 0x72) bytecode72
+    (ite (= x 0x73) bytecode73
+    (ite (= x 0x74) bytecode74
+    (ite (= x 0x75) bytecode75
+    (ite (= x 0x76) bytecode76
+    (ite (= x 0x77) bytecode77
+    (ite (= x 0x78) bytecode78
+    (ite (= x 0x79) bytecode79
+    (ite (= x 0x7A) bytecode7A
+    (ite (= x 0x7B) bytecode7B
+    (ite (= x 0x7C) bytecode7C
+    (ite (= x 0x7D) bytecode7D
+    (ite (= x 0x7E) bytecode7E
+    (ite (= x 0x7F) bytecode7F
+    (ite (= x 0x80) bytecode80
+    (ite (= x 0x81) bytecode81
+    (ite (= x 0x82) bytecode82
+    (ite (= x 0x83) bytecode83
+    (ite (= x 0x84) bytecode84
+    (ite (= x 0x85) bytecode85
+    (ite (= x 0x86) bytecode86
+    (ite (= x 0x87) bytecode87
+    (ite (= x 0x88) bytecode88
+    (ite (= x 0x89) bytecode89
+    (ite (= x 0x8A) bytecode8A
+    (ite (= x 0x8B) bytecode8B
+    (ite (= x 0x8C) bytecode8C
+    (ite (= x 0x8D) bytecode8D
+    (ite (= x 0x8E) bytecode8E
+    (ite (= x 0x8F) bytecode8F
+    (ite (= x 0x90) bytecode90
+    (ite (= x 0x91) bytecode91
+    (ite (= x 0x92) bytecode92
+    (ite (= x 0x93) bytecode93
+    (ite (= x 0x94) bytecode94
+    (ite (= x 0x95) bytecode95
+    (ite (= x 0x96) bytecode96
+    (ite (= x 0x97) bytecode97
+    (ite (= x 0x98) bytecode98
+    (ite (= x 0x99) bytecode99
+    (ite (= x 0x9A) bytecode9A
+    (ite (= x 0x9B) bytecode9B
+    (ite (= x 0x9C) bytecode9C
+    (ite (= x 0x9D) bytecode9D
+    (ite (= x 0x9E) bytecode9E
+    (ite (= x 0x9F) bytecode9F
+    (ite (= x 0xA0) bytecodeA0
+    (ite (= x 0xA1) bytecodeA1
+    (ite (= x 0xA2) bytecodeA2
+    (ite (= x 0xA3) bytecodeA3
+    (ite (= x 0xA4) bytecodeA4
+    (ite (= x 0xA5) bytecodeA5
+    (ite (= x 0xA6) bytecodeA6
+    (ite (= x 0xA7) bytecodeA7
+    (ite (= x 0xA8) bytecodeA8
+    (ite (= x 0xA9) bytecodeA9
+    (ite (= x 0xAA) bytecodeAA
+    (ite (= x 0xAB) bytecodeAB
+    (ite (= x 0xAC) bytecodeAC
+    (ite (= x 0xAD) bytecodeAD
+    (ite (= x 0xAE) bytecodeAE
+    (ite (= x 0xAF) bytecodeAF
+    (ite (= x 0xB0) bytecodeB0
+    (ite (= x 0xB1) bytecodeB1
+    (ite (= x 0xB2) bytecodeB2
+    (ite (= x 0xB3) bytecodeB3
+    (ite (= x 0xB4) bytecodeB4
+    (ite (= x 0xB5) bytecodeB5
+    (ite (= x 0xB6) bytecodeB6
+    (ite (= x 0xB7) bytecodeB7
+    (ite (= x 0xB8) bytecodeB8
+    (ite (= x 0xB9) bytecodeB9
+    (ite (= x 0xBA) bytecodeBA
+    (ite (= x 0xBB) bytecodeBB
+    (ite (= x 0xBC) bytecodeBC
+    (ite (= x 0xBD) bytecodeBD
+    (ite (= x 0xBE) bytecodeBE
+    (ite (= x 0xBF) bytecodeBF
+    (ite (= x 0xC0) bytecodeC0
+    (ite (= x 0xC1) bytecodeC1
+    (ite (= x 0xC2) bytecodeC2
+    (ite (= x 0xC3) bytecodeC3
+    (ite (= x 0xC4) bytecodeC4
+    (ite (= x 0xC5) bytecodeC5
+    (ite (= x 0xC6) bytecodeC6
+    (ite (= x 0xC7) bytecodeC7
+    (ite (= x 0xC8) bytecodeC8
+    (ite (= x 0xC9) bytecodeC9
+    (ite (= x 0xCA) bytecodeCA
+    (ite (= x 0xCB) bytecodeCB
+    (ite (= x 0xCC) bytecodeCC
+    (ite (= x 0xCD) bytecodeCD
+    (ite (= x 0xCE) bytecodeCE
+    (ite (= x 0xCF) bytecodeCF
+    (ite (= x 0xD0) bytecodeD0
+    (ite (= x 0xD1) bytecodeD1
+    (ite (= x 0xD2) bytecodeD2
+    (ite (= x 0xD3) bytecodeD3
+    (ite (= x 0xD4) bytecodeD4
+    (ite (= x 0xD5) bytecodeD5
+    (ite (= x 0xD6) bytecodeD6
+    (ite (= x 0xD7) bytecodeD7
+    (ite (= x 0xD8) bytecodeD8
+    (ite (= x 0xD9) bytecodeD9
+    (ite (= x 0xDA) bytecodeDA
+    (ite (= x 0xDB) bytecodeDB
+    (ite (= x 0xDC) bytecodeDC
+    (ite (= x 0xDD) bytecodeDD
+    (ite (= x 0xDE) bytecodeDE
+    (ite (= x 0xDF) bytecodeDF
+    (ite (= x 0xE0) bytecodeE0
+    (ite (= x 0xE1) bytecodeE1
+    (ite (= x 0xE2) bytecodeE2
+    (ite (= x 0xE3) bytecodeE3
+    (ite (= x 0xE4) bytecodeE4
+    (ite (= x 0xE5) bytecodeE5
+    (ite (= x 0xE6) bytecodeE6
+    (ite (= x 0xE7) bytecodeE7
+    (ite (= x 0xE8) bytecodeE8
+    (ite (= x 0xE9) bytecodeE9
+    (ite (= x 0xEA) bytecodeEA
+    (ite (= x 0xEB) bytecodeEB
+    (ite (= x 0xEC) bytecodeEC
+    (ite (= x 0xED) bytecodeED
+    (ite (= x 0xEE) bytecodeEE
+    (ite (= x 0xEF) bytecodeEF
+    (ite (= x 0xF0) bytecodeF0
+    (ite (= x 0xF1) bytecodeF1
+    (ite (= x 0xF2) bytecodeF2
+    (ite (= x 0xF3) bytecodeF3
+    (ite (= x 0xF4) bytecodeF4
+    (ite (= x 0xF5) bytecodeF5
+    (ite (= x 0xF6) bytecodeF6
+    (ite (= x 0xF7) bytecodeF7
+    (ite (= x 0xF8) bytecodeF8
+    (ite (= x 0xF9) bytecodeF9
+    (ite (= x 0xFA) bytecodeFA
+    (ite (= x 0xFB) bytecodeFB
+    (ite (= x 0xFC) bytecodeFC
+    (ite (= x 0xFD) bytecodeFD
+    (ite (= x 0xFE) bytecodeFE
+    (ite (= x 0xFF) bytecodeFF
+    bytecode04))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))
+  )
+)
+
+(define get-word::(-> Byte Word) 
+	(lambda (x::Byte)
+		(bv-concat (get-byte (bv-add x 0x01)) (get-byte x))
+	)
+)
+
+(define get-dword::(-> Byte Dword) 
+	(lambda (x::Byte)
+		(bv-concat (get-byte (bv-add x 0x03)) (get-byte (bv-add x 0x02)) (get-byte (bv-add x 0x01)) (get-byte x))
+	)
+)
+
+; getreg32(regidx,state). Return the value of 32-bit register 'reg' from state
+; 'state'.
+(define getreg32::(-> RegIdx MachineState Dword)
+  (lambda (x::RegIdx z::MachineState)
+    (ite (= x 0b000) (bv-extract 31    0 z)
+    (ite (= x 0b001) (bv-extract 63   32 z)
+    (ite (= x 0b010) (bv-extract 95   64 z)
+    (ite (= x 0b011) (bv-extract 127  96 z)
+    (ite (= x 0b100) (bv-extract 159 128 z)
+    (ite (= x 0b101) (bv-extract 191 160 z)
+    (ite (= x 0b110) (bv-extract 223 192 z)
+                     (bv-extract 255 224 z)
+    )))))))
+  )
+)
+
+; getreg16(regidx,state). Return the value of 16-bit register 'reg' from state
+; 'state'.
+(define getreg16::(-> RegIdx MachineState Word)
+  (lambda (x::RegIdx z::MachineState)
+    (ite (= x 0b000) (bv-extract 15    0 z)
+    (ite (= x 0b001) (bv-extract 47   32 z)
+    (ite (= x 0b010) (bv-extract 79   64 z)
+    (ite (= x 0b011) (bv-extract 111  96 z)
+    (ite (= x 0b100) (bv-extract 143 128 z)
+    (ite (= x 0b101) (bv-extract 175 160 z)
+    (ite (= x 0b110) (bv-extract 207 192 z)
+                     (bv-extract 239 224 z)
+    )))))))
+  )
+)
+
+; getreg8(regidx,state). Return the value of 16-bit register 'reg' from state
+; 'state'.
+(define getreg8::(-> RegIdx MachineState Byte)
+  (lambda (x::RegIdx z::MachineState)
+    (ite (= x 0b000) (bv-extract 7     0 z)
+    (ite (= x 0b001) (bv-extract 39   32 z)
+    (ite (= x 0b010) (bv-extract 71   64 z)
+    (ite (= x 0b011) (bv-extract 103  96 z)
+    (ite (= x 0b100) (bv-extract 15    8 z)
+    (ite (= x 0b101) (bv-extract 47   40 z)
+    (ite (= x 0b110) (bv-extract 79   72 z)
+                     (bv-extract 111 104 z)
+    )))))))
+  )
+)
+
+; getflag(flagidx,state). Return the value of flag 'flagidx' from state 'state'.
+(define getflag::(-> FlagIdx MachineState Bit)
+  (lambda (x::FlagIdx z::MachineState)
+    (let ((fs (bv-extract 263 256 z)))
+    (ite (= x 0b000) (bv-extract 0 0 fs) ; CF = 0
+    (ite (= x 0b001) (bv-extract 1 1 fs) ; PF = 1
+    (ite (= x 0b010) (bv-extract 2 2 fs) ; AF = 2
+    (ite (= x 0b011) (bv-extract 3 3 fs) ; ZF = 3
+    (ite (= x 0b100) (bv-extract 4 4 fs) ; SF = 4
+    (ite (= x 0b101) (bv-extract 5 5 fs) ; DF = 5
+    (ite (= x 0b110) (bv-extract 6 6 fs) ; OF = 6
+                     (bv-extract 6 6 fs) ; Default [BAD]: OF
+    ))))))))
+  )
+)
+
+; getextra(state). Return the value of extra constraint from state 'state'.
+(define getextra::(-> MachineState Bit)
+  (lambda (z::MachineState)
+    (bv-extract 263 263 z)
+  )
+)
+
+; putreg32(reg,value,state). Update 32-bit register 'reg' to value 'value' in 
+; state 'state'; return the new state.
+(define putreg32::(-> RegIdx Dword MachineState MachineState)
+  (lambda (x::RegIdx y::Dword z::MachineState)
+    (let ((rs (bv-extract 255 0   z)))
+    (let ((fs (bv-extract 263 256 z)))
+    (bv-concat fs
+    (ite (= x 0b000) (bv-concat (bv-extract 255  32 rs) y)
+    (ite (= x 0b001) (bv-concat (bv-extract 255  64 rs) y (bv-extract 31  0 rs))
+    (ite (= x 0b010) (bv-concat (bv-extract 255  96 rs) y (bv-extract 63  0 rs))
+    (ite (= x 0b011) (bv-concat (bv-extract 255 128 rs) y (bv-extract 95  0 rs))
+    (ite (= x 0b100) (bv-concat (bv-extract 255 160 rs) y (bv-extract 127 0 rs))
+    (ite (= x 0b101) (bv-concat (bv-extract 255 192 rs) y (bv-extract 159 0 rs))
+    (ite (= x 0b110) (bv-concat (bv-extract 255 224 rs) y (bv-extract 191 0 rs))
+                     (bv-concat y (bv-extract 223 0 rs))
+    ))))))))))
+  )
+)
+
+; putreg16(reg,value,state). Update 16-bit register 'reg' to value 'value' in 
+; state 'state'; return the new state.
+(define putreg16::(-> RegIdx Word MachineState MachineState)
+  (lambda (x::RegIdx y::Word z::MachineState)
+    (let ((rs (bv-extract 255 0   z)))
+    (let ((fs (bv-extract 263 256 z)))
+    (bv-concat fs
+    (ite (= x 0b000) (bv-concat (bv-extract 255  16 rs) y)
+    (ite (= x 0b001) (bv-concat (bv-extract 255  48 rs) y (bv-extract 31  0 rs))
+    (ite (= x 0b010) (bv-concat (bv-extract 255  80 rs) y (bv-extract 63  0 rs))
+    (ite (= x 0b011) (bv-concat (bv-extract 255 112 rs) y (bv-extract 95  0 rs))
+    (ite (= x 0b100) (bv-concat (bv-extract 255 144 rs) y (bv-extract 127 0 rs))
+    (ite (= x 0b101) (bv-concat (bv-extract 255 176 rs) y (bv-extract 159 0 rs))
+    (ite (= x 0b110) (bv-concat (bv-extract 255 208 rs) y (bv-extract 191 0 rs))
+                     (bv-concat (bv-extract 255 240 rs) y (bv-extract 223 0 rs))
+    ))))))))))
+  )
+)
+
+; putreg8(reg,value,state). Update 16-bit register 'reg' to value 'value' in 
+; state 'state'; return the new state.
+(define putreg8::(-> RegIdx Byte MachineState MachineState)
+  (lambda (x::RegIdx y::Byte z::MachineState)
+    (let ((rs (bv-extract 255 0   z)))
+    (let ((fs (bv-extract 263 256 z)))
+    (bv-concat fs
+    (ite (= x 0b000) (bv-concat (bv-extract 255   8 rs) y)
+    (ite (= x 0b001) (bv-concat (bv-extract 255  40 rs) y (bv-extract 31  0 rs))
+    (ite (= x 0b010) (bv-concat (bv-extract 255  72 rs) y (bv-extract 63  0 rs))
+    (ite (= x 0b011) (bv-concat (bv-extract 255 104 rs) y (bv-extract 95  0 rs))
+    (ite (= x 0b100) (bv-concat (bv-extract 255  16 rs) y (bv-extract 7   0 rs))
+    (ite (= x 0b101) (bv-concat (bv-extract 255  48 rs) y (bv-extract 39  0 rs))
+    (ite (= x 0b110) (bv-concat (bv-extract 255  80 rs) y (bv-extract 71  0 rs))
+                     (bv-concat (bv-extract 255 112 rs) y (bv-extract 103 0 rs))
+    ))))))))))
+  )
+)
+
+; putflag(flag,value,state). Update 1-bit flag 'flag' to value 'value' in 
+; state 'state'; return the new state.
+(define putflag::(-> FlagIdx Bit MachineState MachineState)
+  (lambda (x::FlagIdx y::Bit z::MachineState)
+    (let ((rs (bv-extract 255 0   z)))
+    (let ((fs (bv-extract 263 256 z)))
+    (let ((newfs 
+    (ite (= x 0b000) (bv-concat (bv-extract 7 1 fs) y)
+    (ite (= x 0b001) (bv-concat (bv-extract 7 2 fs) y (bv-extract 0 0 fs))
+    (ite (= x 0b010) (bv-concat (bv-extract 7 3 fs) y (bv-extract 1 0 fs))
+    (ite (= x 0b011) (bv-concat (bv-extract 7 4 fs) y (bv-extract 2 0 fs))
+    (ite (= x 0b100) (bv-concat (bv-extract 7 5 fs) y (bv-extract 3 0 fs))
+    (ite (= x 0b101) (bv-concat (bv-extract 7 6 fs) y (bv-extract 4 0 fs))
+    (ite (= x 0b110) (bv-concat (bv-extract 7 7 fs) y (bv-extract 5 0 fs))
+                     (bv-concat (bv-extract 7 7 fs) y (bv-extract 5 0 fs)))))))))))
+    (bv-concat newfs rs)
+    )))
+  )
+)
+
+; putextra(state). Update 1-bit extra constraint in state 'state'.
+(define putextra::(-> Bit MachineState MachineState)
+  (lambda (b::Bit z::MachineState)
+    (bv-concat b (bv-extract 262 0 z))
+  )
+)
+
+(define consume-opsize-prefix::(-> Byte Bit)
+  (lambda (byte::Byte)
+    (ite (= byte 0x66) 0b1 0b0)
+  )
+)
+
+(define consume-addrsize-prefix::(-> Byte Bit)
+  (lambda (byte::Byte)
+    (ite (= byte 0x67) 0b1 0b0)
+  )
+)
+
+(define update-eip::(-> Byte Bit Byte)
+	(lambda (eip::Byte b::Bit)
+		(ite (= 0b1 b) (bv-add eip 0x01) eip)
+	)
+)
+
+(define bool-to-bit::(-> bool Bit)
+  (lambda (b::bool)
+    (ite b 0b1 0b0)
+  )
+)
+
+(define bit-to-bool::(-> Bit bool)
+  (lambda (b::Bit)
+    (= b 0b1)
+  )
+)
+
+(define x86-parity8::(-> Byte Bit)
+  (lambda (b::Byte)
+    (bv-not 
+      (bv-xor 
+        (bv-extract 7 7 b) (bv-extract 6 6 b) (bv-extract 5 5 b) (bv-extract 4 4 b)
+        (bv-extract 3 3 b) (bv-extract 2 2 b) (bv-extract 1 1 b) (bv-extract 0 0 b)
+      ) ; end bv-xor
+    ) ; end bv-not
+  ) ; end lambda
+) ; end define function
+
+(define x86-parity16::(-> Word Bit)
+  (lambda (w::Word)
+    (x86-parity8 (bv-extract 7 0 w))
+  ) ; end lambda
+) ; end define function
+
+(define x86-parity32::(-> Dword Bit)
+  (lambda (d::Dword)
+    (x86-parity8 (bv-extract 7 0 d))
+  ) ; end lambda
+) ; end define function
+
+(define x86-signdiff8::(-> Byte Byte Bit)
+  (lambda (lhs::Byte rhs::Byte)
+    (bv-xor (bv-extract 7 7 lhs) (bv-extract 7 7 rhs))
+  )
+)
+
+(define x86-signdiff16::(-> Word Word Bit)
+  (lambda (lhs::Word rhs::Word)
+    (bv-xor (bv-extract 15 15 lhs) (bv-extract 15 15 rhs))
+  )
+)
+
+(define x86-signdiff32::(-> Dword Dword Bit)
+  (lambda (lhs::Dword rhs::Dword)
+    (bv-xor (bv-extract 31 31 lhs) (bv-extract 31 31 rhs))
+  )
+)
+
+(define x86-zero-cao::(-> MachineState MachineState)
+  (lambda (state::MachineState)
+    (let ((cfstate (putflag CFIdx 0b0 state)))
+    (let ((afstate (putflag AFIdx 0b0 cfstate)))
+    (let ((ofstate (putflag OFIdx 0b0 afstate)))
+    ofstate)))
+  ) ; end lambda
+) ; end define function
+
+(define x86-standard-zps8::(-> Byte MachineState MachineState)
+  (lambda (res::Byte state::MachineState)
+    (let ((zfstate (putflag ZFIdx (bool-to-bit (= res 0x00)) state)))
+    (let ((sfstate (putflag SFIdx (bv-extract 7 7 res) zfstate)))
+    (let ((pfstate (putflag PFIdx (x86-parity8 res) sfstate)))
+    pfstate)))
+  ) ; end lambda
+) ; end define function
+
+(define x86-standard-zps16::(-> Word MachineState MachineState)
+  (lambda (res::Word state::MachineState)
+    (let ((zfstate (putflag ZFIdx (bool-to-bit (= res 0x0000)) state)))
+    (let ((sfstate (putflag SFIdx (bv-extract 15 15 res) zfstate)))
+    (let ((pfstate (putflag PFIdx (x86-parity16 res) sfstate)))
+    pfstate)))
+  ) ; end lambda
+) ; end define function
+
+(define x86-standard-zps32::(-> Dword MachineState MachineState)
+  (lambda (res::Dword state::MachineState)
+    (let ((zfstate (putflag ZFIdx (bool-to-bit (= res 0x00000000)) state)))
+    (let ((sfstate (putflag SFIdx (bv-extract 31 31 res) zfstate)))
+    (let ((pfstate (putflag PFIdx (x86-parity32 res) sfstate)))
+    pfstate)))
+  ) ; end lambda
+) ; end define function
+
+(define x86-predicated-flag::(-> FlagIdx Bit Bit MachineState MachineState)
+  (lambda (idx::FlagIdx cond::Bit fexpr::Bit state::MachineState)
+    (let ((ef (getflag idx state)))
+    (putflag idx (ite (bit-to-bool cond) ef fexpr) state))
+  ) ; end lambda
+) ; end define function
+
+(define x86-predicated-zps8::(-> Byte Byte MachineState MachineState)
+  (lambda (count::Byte res::Byte state::MachineState)
+    (let ((cond (bool-to-bit (= count 0x00))))
+    (let ((zfstate (x86-predicated-flag ZFIdx cond (bool-to-bit (= res 0x00)) state)))
+    (let ((sfstate (x86-predicated-flag SFIdx cond (bv-extract 7 7 res) zfstate)))
+    (let ((pfstate (x86-predicated-flag PFIdx cond (x86-parity8 res) sfstate)))
+    pfstate))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-predicated-zps16::(-> Byte Word MachineState MachineState)
+  (lambda (count::Byte res::Word state::MachineState)
+    (let ((cond (bool-to-bit (= count 0x00))))
+    (let ((zfstate (x86-predicated-flag ZFIdx cond (bool-to-bit (= res 0x0000)) state)))
+    (let ((sfstate (x86-predicated-flag SFIdx cond (bv-extract 15 15 res) zfstate)))
+    (let ((pfstate (x86-predicated-flag PFIdx cond (x86-parity16 res) sfstate)))
+    pfstate))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-predicated-zps32::(-> Byte Dword MachineState MachineState)
+  (lambda (count::Byte res::Dword state::MachineState)
+    (let ((cond (bool-to-bit (= count 0x00))))
+    (let ((zfstate (x86-predicated-flag ZFIdx cond (bool-to-bit (= res 0x00000000)) state)))
+    (let ((sfstate (x86-predicated-flag SFIdx cond (bv-extract 31 31 res) zfstate)))
+    (let ((pfstate (x86-predicated-flag PFIdx cond (x86-parity32 res) sfstate)))
+    pfstate))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-store-res8::(-> MachineStateRes8 RegIdx MachineState)
+  (lambda (mrr8::MachineStateRes8 idx::RegIdx)
+    (let ((ms  (bv-extract 263 0 mrr8)))
+    (let ((res (bv-extract 271 264 mrr8)))
+    (putreg8 idx res ms)))
+  ) ; end lambda
+) ; end define function
+
+(define x86-store-res16::(-> MachineStateRes16 RegIdx MachineState)
+  (lambda (mrr16::MachineStateRes16 idx::RegIdx)
+    (let ((ms  (bv-extract 263 0 mrr16)))
+    (let ((res (bv-extract 279 264 mrr16)))
+    (putreg16 idx res ms)))
+  ) ; end lambda
+) ; end define function
+
+(define x86-store-res32::(-> MachineStateRes32 RegIdx MachineState)
+  (lambda (mrr32::MachineStateRes32 idx::RegIdx)
+    (let ((ms  (bv-extract 263 0 mrr32)))
+    (let ((res (bv-extract 295 264 mrr32)))
+    (putreg32 idx res ms)))
+  ) ; end lambda
+) ; end define function
+
+(define x86-add8::(-> Byte Byte MachineState MachineStateRes8)
+  (lambda (lhs::Byte rhs::Byte state::MachineState)
+    (let ((eRes (bv-add lhs rhs)))
+    (let ((zpsState (x86-standard-zps8 eRes state)))
+    (let ((zpsaState (putflag AFIdx (bv-extract 4 4 (bv-xor lhs rhs)) zpsState)))
+    (let ((zpsaoState (putflag OFIdx (bv-and (x86-signdiff8 eRes lhs) (x86-signdiff8 eRes rhs)) zpsaState)))
+    (let ((zpsaocState (putflag CFIdx (bool-to-bit (bv-lt eRes rhs)) zpsaoState)))
+    (bv-concat eRes zpsaocState))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-add16::(-> Word Word MachineState MachineStateRes16)
+  (lambda (lhs::Word rhs::Word state::MachineState)
+    (let ((eRes (bv-add lhs rhs)))
+    (let ((zpsState (x86-standard-zps16 eRes state)))
+    (let ((zpsaState (putflag AFIdx (bv-extract 4 4 (bv-xor lhs rhs)) zpsState)))
+    (let ((zpsaoState (putflag OFIdx (bv-and (x86-signdiff16 eRes lhs) (x86-signdiff16 eRes rhs)) zpsaState)))
+    (let ((zpsaocState (putflag CFIdx (bool-to-bit (bv-lt eRes rhs)) zpsaoState)))
+    (bv-concat eRes zpsaocState))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-add32::(-> Dword Dword MachineState MachineStateRes32)
+  (lambda (lhs::Dword rhs::Dword state::MachineState)
+    (let ((eRes (bv-add lhs rhs)))
+    (let ((zpsState (x86-standard-zps32 eRes state)))
+    (let ((zpsaState (putflag AFIdx (bv-extract 4 4 (bv-xor lhs rhs)) zpsState)))
+    (let ((zpsaoState (putflag OFIdx (bv-and (x86-signdiff32 eRes lhs) (x86-signdiff32 eRes rhs)) zpsaState)))
+    (let ((zpsaocState (putflag CFIdx (bool-to-bit (bv-lt eRes rhs)) zpsaoState)))
+    (bv-concat eRes zpsaocState))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-inc8::(-> Byte MachineState MachineStateRes8)
+  (lambda (lhs::Byte state::MachineState)
+    (let ((rhs 0x01))
+    (let ((eRes (bv-add lhs rhs)))
+    (let ((zpsState (x86-standard-zps8 eRes state)))
+    (let ((zpsaState (putflag AFIdx (bv-extract 4 4 (bv-xor lhs rhs)) zpsState)))
+    (let ((zpsaoState (putflag OFIdx (bv-and (x86-signdiff8 eRes lhs) (x86-signdiff8 eRes rhs)) zpsaState)))
+    (bv-concat eRes zpsaoState))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-inc16::(-> Word MachineState MachineStateRes16)
+  (lambda (lhs::Word state::MachineState)
+    (let ((rhs 0x0001))
+    (let ((eRes (bv-add lhs rhs)))
+    (let ((zpsState (x86-standard-zps16 eRes state)))
+    (let ((zpsaState (putflag AFIdx (bv-extract 4 4 (bv-xor lhs rhs)) zpsState)))
+    (let ((zpsaoState (putflag OFIdx (bv-and (x86-signdiff16 eRes lhs) (x86-signdiff16 eRes rhs)) zpsaState)))
+    (bv-concat eRes zpsaoState))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-inc32::(-> Dword MachineState MachineStateRes32)
+  (lambda (lhs::Dword state::MachineState)
+    (let ((rhs 0x00000001))
+    (let ((eRes (bv-add lhs rhs)))
+    (let ((zpsState (x86-standard-zps32 eRes state)))
+    (let ((zpsaState (putflag AFIdx (bv-extract 4 4 (bv-xor lhs rhs)) zpsState)))
+    (let ((zpsaoState (putflag OFIdx (bv-and (x86-signdiff32 eRes lhs) (x86-signdiff32 eRes rhs)) zpsaState)))
+    (bv-concat eRes zpsaoState))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-or8::(-> Byte Byte MachineState MachineStateRes8)
+  (lambda (lhs::Byte rhs::Byte state::MachineState)
+    (let ((eRes (bv-or lhs rhs)))
+    (let ((zpsState (x86-standard-zps8 eRes state)))
+    (let ((zpsaocState (x86-zero-cao zpsState)))
+    (bv-concat eRes zpsaocState))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-or16::(-> Word Word MachineState MachineStateRes16)
+  (lambda (lhs::Word rhs::Word state::MachineState)
+    (let ((eRes (bv-or lhs rhs)))
+    (let ((zpsState (x86-standard-zps16 eRes state)))
+    (let ((zpsaocState (x86-zero-cao zpsState)))
+    (bv-concat eRes zpsaocState))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-or32::(-> Dword Dword MachineState MachineStateRes32)
+  (lambda (lhs::Dword rhs::Dword state::MachineState)
+    (let ((eRes (bv-or lhs rhs)))
+    (let ((zpsState (x86-standard-zps32 eRes state)))
+    (let ((zpsaocState (x86-zero-cao zpsState)))
+    (bv-concat eRes zpsaocState))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-xor8::(-> Byte Byte MachineState MachineStateRes8)
+  (lambda (lhs::Byte rhs::Byte state::MachineState)
+    (let ((eRes (bv-xor lhs rhs)))
+    (let ((zpsState (x86-standard-zps8 eRes state)))
+    (let ((zpsaocState (x86-zero-cao zpsState)))
+    (bv-concat eRes zpsaocState))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-xor16::(-> Word Word MachineState MachineStateRes16)
+  (lambda (lhs::Word rhs::Word state::MachineState)
+    (let ((eRes (bv-xor lhs rhs)))
+    (let ((zpsState (x86-standard-zps16 eRes state)))
+    (let ((zpsaocState (x86-zero-cao zpsState)))
+    (bv-concat eRes zpsaocState))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-xor32::(-> Dword Dword MachineState MachineStateRes32)
+  (lambda (lhs::Dword rhs::Dword state::MachineState)
+    (let ((eRes (bv-xor lhs rhs)))
+    (let ((zpsState (x86-standard-zps32 eRes state)))
+    (let ((zpsaocState (x86-zero-cao zpsState)))
+    (bv-concat eRes zpsaocState))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-and8::(-> Byte Byte MachineState MachineStateRes8)
+  (lambda (lhs::Byte rhs::Byte state::MachineState)
+    (let ((eRes (bv-and lhs rhs)))
+    (let ((zpsState (x86-standard-zps8 eRes state)))
+    (let ((zpsaocState (x86-zero-cao zpsState)))
+    (bv-concat eRes zpsaocState))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-and16::(-> Word Word MachineState MachineStateRes16)
+  (lambda (lhs::Word rhs::Word state::MachineState)
+    (let ((eRes (bv-and lhs rhs)))
+    (let ((zpsState (x86-standard-zps16 eRes state)))
+    (let ((zpsaocState (x86-zero-cao zpsState)))
+    (bv-concat eRes zpsaocState))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-and32::(-> Dword Dword MachineState MachineStateRes32)
+  (lambda (lhs::Dword rhs::Dword state::MachineState)
+    (let ((eRes (bv-and lhs rhs)))
+    (let ((zpsState (x86-standard-zps32 eRes state)))
+    (let ((zpsaocState (x86-zero-cao zpsState)))
+    (bv-concat eRes zpsaocState))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-adc8::(-> Byte Byte MachineState MachineStateRes8)
+  (lambda (lhs::Byte rhs::Byte state::MachineState)
+    (let ((eRhsPlus (bv-add rhs (bv-zero-extend (getflag CFIdx state) 7) )))
+    (let ((eRes (bv-add lhs eRhsPlus)))
+    (let ((zpsState (x86-standard-zps8 eRes state)))
+    (let ((zpsaState (putflag AFIdx (bv-extract 4 4 (bv-xor lhs rhs eRes)) zpsState)))
+    (let ((zpsaoState (putflag OFIdx (bv-and (x86-signdiff8 eRes lhs) (x86-signdiff8 eRes rhs)) zpsaState)))
+    (let ((zpsaocState (putflag CFIdx (bv-or (bool-to-bit (bv-lt eRes rhs)) (bool-to-bit (bv-lt eRhsPlus rhs))) zpsaoState)))
+    (bv-concat eRes zpsaocState)))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-adc16::(-> Word Word MachineState MachineStateRes16)
+  (lambda (lhs::Word rhs::Word state::MachineState)
+    (let ((eRhsPlus (bv-add rhs (bv-zero-extend (getflag CFIdx state) 15) )))
+    (let ((eRes (bv-add lhs rhs)))
+    (let ((zpsState (x86-standard-zps16 eRes state)))
+    (let ((zpsaState (putflag AFIdx (bv-extract 4 4 (bv-xor lhs rhs eRes)) zpsState)))
+    (let ((zpsaoState (putflag OFIdx (bv-and (x86-signdiff16 eRes lhs) (x86-signdiff16 eRes rhs)) zpsaState)))
+    (let ((zpsaocState (putflag CFIdx (bv-or (bool-to-bit (bv-lt eRes rhs)) (bool-to-bit (bv-lt eRhsPlus rhs))) zpsaoState)))
+    (bv-concat eRes zpsaocState)))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-adc32::(-> Dword Dword MachineState MachineStateRes32)
+  (lambda (lhs::Dword rhs::Dword state::MachineState)
+    (let ((eRhsPlus (bv-add rhs (bv-zero-extend (getflag CFIdx state) 31) )))
+    (let ((eRes (bv-add lhs rhs)))
+    (let ((zpsState (x86-standard-zps32 eRes state)))
+    (let ((zpsaState (putflag AFIdx (bv-extract 4 4 (bv-xor lhs rhs eRes)) zpsState)))
+    (let ((zpsaoState (putflag OFIdx (bv-and (x86-signdiff32 eRes lhs) (x86-signdiff32 eRes rhs)) zpsaState)))
+    (let ((zpsaocState (putflag CFIdx (bv-or (bool-to-bit (bv-lt eRes rhs)) (bool-to-bit (bv-lt eRhsPlus rhs))) zpsaoState)))
+    (bv-concat eRes zpsaocState)))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-sbb8::(-> Byte Byte MachineState MachineStateRes8)
+  (lambda (lhs::Byte rhs::Byte state::MachineState)
+    (let ((eRhsPlus (bv-add rhs (bv-zero-extend (getflag CFIdx state) 7) )))
+    (let ((eRes (bv-sub lhs eRhsPlus)))
+    (let ((zpsState (x86-standard-zps8 eRes state)))
+    (let ((zpsaState (putflag AFIdx (bv-extract 4 4 (bv-xor lhs rhs eRes)) zpsState)))
+    (let ((zpsaoState (putflag OFIdx (bv-and (x86-signdiff8 eRes lhs) (x86-signdiff8 lhs rhs)) zpsaState)))
+    (let ((zpsaocState (putflag CFIdx (bv-or (bool-to-bit (bv-lt lhs eRhsPlus)) (bool-to-bit (bv-lt eRhsPlus rhs))) zpsaoState)))
+    (bv-concat eRes zpsaocState)))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-sbb16::(-> Word Word MachineState MachineStateRes16)
+  (lambda (lhs::Word rhs::Word state::MachineState)
+    (let ((eRhsPlus (bv-add rhs (bv-zero-extend (getflag CFIdx state) 15) )))
+    (let ((eRes (bv-sub lhs rhs)))
+    (let ((zpsState (x86-standard-zps16 eRes state)))
+    (let ((zpsaState (putflag AFIdx (bv-extract 4 4 (bv-xor lhs rhs eRes)) zpsState)))
+    (let ((zpsaoState (putflag OFIdx (bv-and (x86-signdiff16 eRes lhs) (x86-signdiff16 lhs rhs)) zpsaState)))
+    (let ((zpsaocState (putflag CFIdx (bv-or (bool-to-bit (bv-lt lhs eRhsPlus)) (bool-to-bit (bv-lt eRhsPlus rhs))) zpsaoState)))
+    (bv-concat eRes zpsaocState)))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-sbb32::(-> Dword Dword MachineState MachineStateRes32)
+  (lambda (lhs::Dword rhs::Dword state::MachineState)
+    (let ((eRhsPlus (bv-add rhs (bv-zero-extend (getflag CFIdx state) 31) )))
+    (let ((eRes (bv-sub lhs rhs)))
+    (let ((zpsState (x86-standard-zps32 eRes state)))
+    (let ((zpsaState (putflag AFIdx (bv-extract 4 4 (bv-xor lhs rhs eRes)) zpsState)))
+    (let ((zpsaoState (putflag OFIdx (bv-and (x86-signdiff32 eRes lhs) (x86-signdiff32 lhs rhs)) zpsaState)))
+    (let ((zpsaocState (putflag CFIdx (bv-or (bool-to-bit (bv-lt lhs eRhsPlus)) (bool-to-bit (bv-lt eRhsPlus rhs))) zpsaoState)))
+    (bv-concat eRes zpsaocState)))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-sub8::(-> Byte Byte MachineState MachineStateRes8)
+  (lambda (lhs::Byte rhs::Byte state::MachineState)
+    (let ((eRes (bv-sub lhs rhs)))
+    (let ((zpsState (x86-standard-zps8 eRes state)))
+    (let ((zpsaState (putflag AFIdx (bv-extract 4 4 (bv-xor lhs rhs eRes)) zpsState)))
+    (let ((zpsaoState (putflag OFIdx (bv-and (x86-signdiff8 eRes lhs) (x86-signdiff8 lhs rhs)) zpsaState)))
+    (let ((zpsaocState (putflag CFIdx (bool-to-bit (bv-lt lhs rhs)) zpsaoState)))
+    (bv-concat eRes zpsaocState))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-sub16::(-> Word Word MachineState MachineStateRes16)
+  (lambda (lhs::Word rhs::Word state::MachineState)
+    (let ((eRes (bv-sub lhs rhs)))
+    (let ((zpsState (x86-standard-zps16 eRes state)))
+    (let ((zpsaState (putflag AFIdx (bv-extract 4 4 (bv-xor lhs rhs eRes)) zpsState)))
+    (let ((zpsaoState (putflag OFIdx (bv-and (x86-signdiff16 eRes lhs) (x86-signdiff16 lhs rhs)) zpsaState)))
+    (let ((zpsaocState (putflag CFIdx (bool-to-bit (bv-lt lhs rhs)) zpsaoState)))
+    (bv-concat eRes zpsaocState))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-sub32::(-> Dword Dword MachineState MachineStateRes32)
+  (lambda (lhs::Dword rhs::Dword state::MachineState)
+    (let ((eRes (bv-sub lhs rhs)))
+    (let ((zpsState (x86-standard-zps32 eRes state)))
+    (let ((zpsaState (putflag AFIdx (bv-extract 4 4 (bv-xor lhs rhs eRes)) zpsState)))
+    (let ((zpsaoState (putflag OFIdx (bv-and (x86-signdiff32 eRes lhs) (x86-signdiff32 lhs rhs)) zpsaState)))
+    (let ((zpsaocState (putflag CFIdx (bool-to-bit (bv-lt lhs rhs)) zpsaoState)))
+    (bv-concat eRes zpsaocState))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-dec8::(-> Byte MachineState MachineStateRes8)
+  (lambda (lhs::Byte state::MachineState)
+    (let ((rhs 0x01))
+    (let ((eRes (bv-sub lhs rhs)))
+    (let ((zpsState (x86-standard-zps8 eRes state)))
+    (let ((zpsaState (putflag AFIdx (bv-extract 4 4 (bv-xor lhs rhs eRes)) zpsState)))
+    (let ((zpsaoState (putflag OFIdx (bv-and (x86-signdiff8 eRes lhs) (x86-signdiff8 lhs rhs)) zpsaState)))
+    (bv-concat eRes zpsaoState))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-dec16::(-> Word MachineState MachineStateRes16)
+  (lambda (lhs::Word state::MachineState)
+    (let ((rhs 0x0001))
+    (let ((eRes (bv-sub lhs rhs)))
+    (let ((zpsState (x86-standard-zps16 eRes state)))
+    (let ((zpsaState (putflag AFIdx (bv-extract 4 4 (bv-xor lhs rhs eRes)) zpsState)))
+    (let ((zpsaoState (putflag OFIdx (bv-and (x86-signdiff16 eRes lhs) (x86-signdiff16 lhs rhs)) zpsaState)))
+    (bv-concat eRes zpsaoState))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-dec32::(-> Dword MachineState MachineStateRes32)
+  (lambda (lhs::Dword state::MachineState)
+    (let ((rhs 0x00000001))
+    (let ((eRes (bv-sub lhs rhs)))
+    (let ((zpsState (x86-standard-zps32 eRes state)))
+    (let ((zpsaState (putflag AFIdx (bv-extract 4 4 (bv-xor lhs rhs eRes)) zpsState)))
+    (let ((zpsaoState (putflag OFIdx (bv-and (x86-signdiff32 eRes lhs) (x86-signdiff32 lhs rhs)) zpsaState)))
+    (bv-concat eRes zpsaoState))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-shr8::(-> Byte Byte MachineState MachineStateRes8)
+  (lambda (lhs::Byte rhs::Byte state::MachineState)
+    (let ((eCount (bv-and rhs 0x1F)))
+    (let ((cCount (bool-to-bit (= eCount 0x00))))
+    (let ((eRes (bv-lshr lhs eCount)))
+    (let ((zpsState (x86-predicated-zps8 eRes eCount state)))
+    (let ((zpsaState (x86-predicated-flag AFIdx cCount 0b0 zpsState)))
+    (let ((zpsaoState (x86-predicated-flag OFIdx cCount (ite (= eCount 0x01) (bool-to-bit (bv-slt lhs 0x00)) 0b0) zpsaState)))
+    (let ((zpsaocState (x86-predicated-flag CFIdx cCount (bv-extract 0 0 (bv-lshr lhs (bv-sub eCount 0x01))) zpsaoState)))
+    (bv-concat eRes zpsaoState))))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-shr16::(-> Word Byte MachineState MachineStateRes16)
+  (lambda (lhs::Word rhs::Byte state::MachineState)
+    (let ((eCount (bv-and rhs 0x1F)))
+    (let ((cCount (bool-to-bit (= eCount 0x00))))
+    (let ((eRes (bv-lshr lhs (bv-zero-extend eCount 8))))
+    (let ((zpsState (x86-predicated-zps16 eCount eRes state)))
+    (let ((zpsaState (x86-predicated-flag AFIdx cCount 0b0 zpsState)))
+    (let ((zpsaoState (x86-predicated-flag OFIdx cCount (ite (= eCount 0x01) (bool-to-bit (bv-slt lhs 0x0000)) 0b0) zpsaState)))
+    (let ((zpsaocState (x86-predicated-flag CFIdx cCount (bv-extract 0 0 (bv-lshr lhs (bv-zero-extend (bv-sub eCount 0x01) 8))) zpsaoState)))
+    (bv-concat eRes zpsaoState))))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-shr32::(-> Dword Byte MachineState MachineStateRes32)
+  (lambda (lhs::Dword rhs::Byte state::MachineState)
+    (let ((eCount (bv-and rhs 0x1F)))
+    (let ((cCount (bool-to-bit (= eCount 0x00))))
+    (let ((eRes (bv-lshr lhs (bv-zero-extend eCount 24))))
+    (let ((zpsState (x86-predicated-zps32 eCount eRes state)))
+    (let ((zpsaState (x86-predicated-flag AFIdx cCount 0b0 zpsState)))
+    (let ((zpsaoState (x86-predicated-flag OFIdx cCount (ite (= eCount 0x01) (bool-to-bit (bv-slt lhs 0x00000000)) 0b0) zpsaState)))
+    (let ((zpsaocState (x86-predicated-flag CFIdx cCount (bv-extract 0 0 (bv-lshr lhs (bv-zero-extend (bv-sub eCount 0x01) 24))) zpsaoState)))
+    (bv-concat eRes zpsaoState))))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-sar8::(-> Byte Byte MachineState MachineStateRes8)
+  (lambda (lhs::Byte rhs::Byte state::MachineState)
+    (let ((eCount (bv-and rhs 0x1F)))
+    (let ((cCount (bool-to-bit (= eCount 0x00))))
+    (let ((eRes (bv-ashr lhs eCount)))
+    (let ((zpsState (x86-predicated-zps8 eRes eCount state)))
+    (let ((zpsaState (x86-predicated-flag AFIdx cCount 0b0 zpsState)))
+    (let ((zpsaoState (x86-predicated-flag OFIdx cCount (ite (= eCount 0x01) 0b0 0b1) zpsaState)))
+    (let ((zpsaocState (x86-predicated-flag CFIdx cCount (bv-extract 0 0 (bv-ashr lhs (bv-sub eCount 0x01))) zpsaoState)))
+    (bv-concat eRes zpsaoState))))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-sar16::(-> Word Byte MachineState MachineStateRes16)
+  (lambda (lhs::Word rhs::Byte state::MachineState)
+    (let ((eCount (bv-and rhs 0x1F)))
+    (let ((cCount (bool-to-bit (= eCount 0x00))))
+    (let ((eRes (bv-ashr lhs (bv-zero-extend eCount 8))))
+    (let ((zpsState (x86-predicated-zps16 eCount eRes state)))
+    (let ((zpsaState (x86-predicated-flag AFIdx cCount 0b0 zpsState)))
+    (let ((zpsaoState (x86-predicated-flag OFIdx cCount (ite (= eCount 0x01) 0b0 0b1) zpsaState)))
+    (let ((zpsaocState (x86-predicated-flag CFIdx cCount (bv-extract 0 0 (bv-ashr lhs (bv-zero-extend (bv-sub eCount 0x01) 8))) zpsaoState)))
+    (bv-concat eRes zpsaoState))))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-sar32::(-> Dword Byte MachineState MachineStateRes32)
+  (lambda (lhs::Dword rhs::Byte state::MachineState)
+    (let ((eCount (bv-and rhs 0x1F)))
+    (let ((cCount (bool-to-bit (= eCount 0x00))))
+    (let ((eRes (bv-ashr lhs (bv-zero-extend eCount 24))))
+    (let ((zpsState (x86-predicated-zps32 eCount eRes state)))
+    (let ((zpsaState (x86-predicated-flag AFIdx cCount 0b0 zpsState)))
+    (let ((zpsaoState (x86-predicated-flag OFIdx cCount (ite (= eCount 0x01) 0b0 0b1) zpsaState)))
+    (let ((zpsaocState (x86-predicated-flag CFIdx cCount (bv-extract 0 0 (bv-ashr lhs (bv-zero-extend (bv-sub eCount 0x01) 24))) zpsaoState)))
+    (bv-concat eRes zpsaoState))))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-shl8::(-> Byte Byte MachineState MachineStateRes8)
+  (lambda (lhs::Byte rhs::Byte state::MachineState)
+    (let ((eCount (bv-and rhs 0x1F)))
+    (let ((cCount (bool-to-bit (= eCount 0x00))))
+    (let ((eRes (bv-shl lhs eCount)))
+    (let ((zpsState (x86-predicated-zps8 eRes eCount state)))
+    (let ((zpsaState (x86-predicated-flag AFIdx cCount 0b0 zpsState)))
+    (let ((zpsaoState (x86-predicated-flag OFIdx cCount (ite (= eCount 0x01) (x86-signdiff8 lhs eRes) 0b0) zpsaState)))
+    (let ((zpsaocState (x86-predicated-flag CFIdx cCount (bool-to-bit (bv-slt (bv-shl lhs (bv-sub eCount 0x01)) 0x00)) zpsaoState)))
+    (bv-concat eRes zpsaoState))))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-shl16::(-> Word Byte MachineState MachineStateRes16)
+  (lambda (lhs::Word rhs::Byte state::MachineState)
+    (let ((eCount (bv-and rhs 0x1F)))
+    (let ((cCount (bool-to-bit (= eCount 0x00))))
+    (let ((eRes (bv-shl lhs (bv-zero-extend eCount 8))))
+    (let ((zpsState (x86-predicated-zps16 eCount eRes state)))
+    (let ((zpsaState (x86-predicated-flag AFIdx cCount 0b0 zpsState)))
+    (let ((zpsaoState (x86-predicated-flag OFIdx cCount (ite (= eCount 0x01) (x86-signdiff16 lhs eRes) 0b0) zpsaState)))
+    (let ((zpsaocState (x86-predicated-flag CFIdx cCount (bool-to-bit (bv-slt (bv-shl lhs (bv-zero-extend (bv-sub eCount 0x01) 8)) 0x0000)) zpsaoState)))
+    (bv-concat eRes zpsaoState))))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-shl32::(-> Dword Byte MachineState MachineStateRes32)
+  (lambda (lhs::Dword rhs::Byte state::MachineState)
+    (let ((eCount (bv-and rhs 0x1F)))
+    (let ((cCount (bool-to-bit (= eCount 0x00))))
+    (let ((eRes (bv-shl lhs (bv-zero-extend eCount 24))))
+    (let ((zpsState (x86-predicated-zps32 eCount eRes state)))
+    (let ((zpsaState (x86-predicated-flag AFIdx cCount 0b0 zpsState)))
+    (let ((zpsaoState (x86-predicated-flag OFIdx cCount (ite (= eCount 0x01) (x86-signdiff32 lhs eRes) 0b0) zpsaState)))
+    (let ((zpsaocState (x86-predicated-flag CFIdx cCount (bool-to-bit (bv-slt (bv-shl lhs (bv-zero-extend (bv-sub eCount 0x01) 24)) 0x00000000)) zpsaoState)))
+    (bv-concat eRes zpsaoState))))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-rol8::(-> Byte Byte MachineState MachineStateRes8)
+  (lambda (lhs::Byte rhs::Byte state::MachineState)
+    (let ((eCount (bv-and rhs 0x1F)))
+    (let ((cCount (bool-to-bit (= eCount 0x00))))
+    (let ((eCount2 (bv-and rhs 0x07)))
+    (let ((eRes (ite (= eCount2 0x00) lhs (bv-or (bv-shl lhs eCount2) (bv-lshr lhs (bv-sub 0x08 eCount2))))))
+    (let ((oState (x86-predicated-flag OFIdx cCount (ite (= eCount 0x01) (x86-signdiff8 lhs eRes) 0b0) state)))
+    (let ((ocState (x86-predicated-flag CFIdx cCount (bv-extract 0 0 eRes) oState)))
+    (bv-concat eRes ocState)))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-rol16::(-> Word Byte MachineState MachineStateRes16)
+  (lambda (lhs::Word rhs::Byte state::MachineState)
+    (let ((eCount (bv-and rhs 0x1F)))
+    (let ((cCount (bool-to-bit (= eCount 0x01))))
+    (let ((eCount2 (bv-and rhs 0x0F)))
+    (let ((eCount2Ext (bv-zero-extend (bv-and rhs 0x0F) 8)))
+    (let ((eRes (ite (= eCount2 0x00) lhs (bv-or (bv-shl lhs eCount2Ext) (bv-lshr lhs (bv-sub 0x0008 eCount2Ext))))))
+    (let ((oState (x86-predicated-flag OFIdx cCount (ite (= eCount 0x01) (x86-signdiff16 lhs eRes) 0b0) state)))
+    (let ((ocState (x86-predicated-flag CFIdx cCount (bv-extract 0 0 eRes) oState)))
+    (bv-concat eRes ocState))))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-rol32::(-> Dword Byte MachineState MachineStateRes32)
+  (lambda (lhs::Dword rhs::Byte state::MachineState)
+    (let ((eCount (bv-and rhs 0x1F)))
+    (let ((cCount (bool-to-bit (= eCount 0x01))))
+    (let ((eCount2 (bv-and rhs 0x1F)))
+    (let ((eCount2Ext (bv-zero-extend (bv-and rhs 0x1F) 24)))
+    (let ((eRes (ite (= eCount2 0x00) lhs (bv-or (bv-shl lhs eCount2Ext) (bv-lshr lhs (bv-sub 0x00000008 eCount2Ext))))))
+    (let ((oState (x86-predicated-flag OFIdx cCount (ite (= eCount 0x01) (x86-signdiff32 lhs eRes) 0b0) state)))
+    (let ((ocState (x86-predicated-flag CFIdx cCount (bv-extract 0 0 eRes) oState)))
+    (bv-concat eRes ocState))))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-ror8::(-> Byte Byte MachineState MachineStateRes8)
+  (lambda (lhs::Byte rhs::Byte state::MachineState)
+    (let ((eCount (bv-and rhs 0x1F)))
+    (let ((cCount (bool-to-bit (= eCount 0x00))))
+    (let ((eCount2 (bv-and rhs 0x07)))
+    (let ((eRes (ite (= eCount2 0x00) lhs (bv-or (bv-lshr lhs eCount2) (bv-shl lhs (bv-sub 0x08 eCount2))))))
+    (let ((oState (x86-predicated-flag OFIdx cCount (ite (= eCount 0x01) (x86-signdiff8 lhs eRes) 0b0) state)))
+    (let ((ocState (x86-predicated-flag CFIdx cCount (bool-to-bit (bv-slt eRes 0x00)) oState)))
+    (bv-concat eRes ocState)))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-ror16::(-> Word Byte MachineState MachineStateRes16)
+  (lambda (lhs::Word rhs::Byte state::MachineState)
+    (let ((eCount (bv-and rhs 0x1F)))
+    (let ((cCount (bool-to-bit (= eCount 0x01))))
+    (let ((eCount2 (bv-and rhs 0x0F)))
+    (let ((eCount2Ext (bv-zero-extend (bv-and rhs 0x0F) 8)))
+    (let ((eRes (ite (= eCount2 0x00) lhs (bv-or (bv-lshr lhs eCount2Ext) (bv-shl lhs (bv-sub 0x0008 eCount2Ext))))))
+    (let ((oState (x86-predicated-flag OFIdx cCount (ite (= eCount 0x01) (x86-signdiff16 lhs eRes) 0b0) state)))
+    (let ((ocState (x86-predicated-flag CFIdx cCount (bool-to-bit (bv-slt eRes 0x0000)) oState)))
+    (bv-concat eRes ocState))))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-ror32::(-> Dword Byte MachineState MachineStateRes32)
+  (lambda (lhs::Dword rhs::Byte state::MachineState)
+    (let ((eCount (bv-and rhs 0x1F)))
+    (let ((cCount (bool-to-bit (= eCount 0x01))))
+    (let ((eCount2 (bv-and rhs 0x1F)))
+    (let ((eCount2Ext (bv-zero-extend (bv-and rhs 0x1F) 24)))
+    (let ((eRes (ite (= eCount2 0x00) lhs (bv-or (bv-lshr lhs eCount2Ext) (bv-shl lhs (bv-sub 0x00000008 eCount2Ext))))))
+    (let ((oState (x86-predicated-flag OFIdx cCount (ite (= eCount 0x01) (x86-signdiff32 lhs eRes) 0b0) state)))
+    (let ((ocState (x86-predicated-flag CFIdx cCount (bool-to-bit (bv-slt eRes 0x00000000)) oState)))
+    (bv-concat eRes ocState))))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-range0x1F-mod9::(-> Byte Byte)
+  (lambda (b::Byte)
+    (ite (bv-slt b 0x09) b
+    (ite (bv-slt b 0x12) (bv-sub b 0x09)
+    (ite (bv-slt b 0x1B) (bv-sub b 0x12)
+    (bv-sub b 0x1B))))
+  )
+)
+    
+(define x86-range0x1F-mod17::(-> Byte Byte)
+  (lambda (b::Byte)
+    (ite (bv-slt b 0x11) b (bv-sub b 0x11))
+  )
+)
+
+(define x86-rcl8::(-> Byte Byte MachineState MachineStateRes8)
+  (lambda (lhs::Byte rhs::Byte state::MachineState)
+    (let ((eCount (x86-range0x1F-mod9 (bv-and rhs 0x1F))))
+    (let ((cCount (bool-to-bit (= eCount 0x00))))
+    (let ((eCountExt eCount))
+    (let ((eCountM1 (bv-sub eCount 0x01)))
+    (let ((eCFExt (bv-zero-extend (getflag CFIdx state) 7)))
+    (let ((eRes (ite (= eCount 0x00) lhs (bv-or (bv-shl (bv-or (bv-shl lhs 0x01) eCFExt) eCountM1) (bv-lshr lhs (bv-sub 0x08 eCountM1))))))
+    (let ((oState (x86-predicated-flag OFIdx cCount (ite (= eCount 0x01) (x86-signdiff8 lhs eRes) 0b0) state)))
+    (let ((ocState (x86-predicated-flag CFIdx cCount (bv-extract 0 0 (bv-lshr lhs (bv-sub 0x08 eCountExt))) oState)))
+    (bv-concat eRes ocState)))))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-rcl16::(-> Word Byte MachineState MachineStateRes16)
+  (lambda (lhs::Word rhs::Byte state::MachineState)
+    (let ((eCount (x86-range0x1F-mod17 (bv-and rhs 0x1F))))
+    (let ((cCount (bool-to-bit (= eCount 0x00))))
+    (let ((eCountExt (bv-zero-extend eCount 8)))
+    (let ((eCountM1 (bv-zero-extend (bv-sub eCount 0x01) 8)))
+    (let ((eCFExt (bv-zero-extend (getflag CFIdx state) 15)))
+    (let ((eRes (ite (= eCount 0x00) lhs (bv-or (bv-shl (bv-or (bv-shl lhs 0x0001) eCFExt) eCountM1) (bv-lshr lhs (bv-sub 0x0010 eCountM1))))))
+    (let ((oState (x86-predicated-flag OFIdx cCount (ite (= eCount 0x01) (x86-signdiff16 lhs eRes) 0b0) state)))
+    (let ((ocState (x86-predicated-flag CFIdx cCount (bv-extract 0 0 (bv-lshr lhs (bv-sub 0x0010 eCountExt))) oState)))
+    (bv-concat eRes ocState)))))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-rcl32::(-> Dword Byte MachineState MachineStateRes32)
+  (lambda (lhs::Dword rhs::Byte state::MachineState)
+    (let ((eCount (bv-and rhs 0x1F)))
+    (let ((cCount (bool-to-bit (= eCount 0x00))))
+    (let ((eCountExt (bv-zero-extend eCount 24)))
+    (let ((eCountM1 (bv-zero-extend (bv-sub eCount 0x01) 24)))
+    (let ((eCFExt (bv-zero-extend (getflag CFIdx state) 31)))
+    (let ((eRes (ite (= eCount 0x00) lhs (bv-or (bv-shl (bv-or (bv-shl lhs 0x00000001) eCFExt) eCountM1) (bv-lshr lhs (bv-sub 0x00000020 eCountM1))))))
+    (let ((oState (x86-predicated-flag OFIdx cCount (ite (= eCount 0x01) (x86-signdiff32 lhs eRes) 0b0) state)))
+    (let ((ocState (x86-predicated-flag CFIdx cCount (bv-extract 0 0 (bv-lshr lhs (bv-sub 0x00000020 eCountExt))) oState)))
+    (bv-concat eRes ocState)))))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-rcr8::(-> Byte Byte MachineState MachineStateRes8)
+  (lambda (lhs::Byte rhs::Byte state::MachineState)
+    (let ((eCount (x86-range0x1F-mod9 (bv-and rhs 0x1F))))
+    (let ((cCount (bool-to-bit (= eCount 0x00))))
+    (let ((eCountExt eCount))
+    (let ((eCountM1 (bv-sub eCount 0x01)))
+    (let ((eCFExt (bv-zero-extend (getflag CFIdx state) 7)))
+    (let ((eRes (ite (= eCount 0x00) lhs (bv-or (bv-lshr (bv-or (bv-shl eCFExt 0x07) (bv-lshr lhs 0x01)) eCountM1) (bv-shl lhs (bv-sub 0x08 eCountM1))))))
+    (let ((oState (x86-predicated-flag OFIdx cCount (ite (= eCount 0x01) (x86-signdiff8 lhs eRes) 0b0) state)))
+    (let ((ocState (x86-predicated-flag CFIdx cCount (bv-extract 0 0 (bv-lshr lhs eCountM1)) oState)))
+    (bv-concat eRes ocState)))))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-rcr16::(-> Word Byte MachineState MachineStateRes16)
+  (lambda (lhs::Word rhs::Byte state::MachineState)
+    (let ((eCount (x86-range0x1F-mod17 (bv-and rhs 0x1F))))
+    (let ((cCount (bool-to-bit (= eCount 0x00))))
+    (let ((eCountExt (bv-zero-extend eCount 8)))
+    (let ((eCountM1 (bv-zero-extend (bv-sub eCount 0x01) 8)))
+    (let ((eCFExt (bv-zero-extend (getflag CFIdx state) 15)))
+    (let ((eRes (ite (= eCount 0x00) lhs (bv-or (bv-lshr (bv-or (bv-shl eCFExt 0x000F) (bv-lshr lhs 0x0001)) eCountM1) (bv-shl lhs (bv-sub 0x0010 eCountM1))))))
+    (let ((oState (x86-predicated-flag OFIdx cCount (ite (= eCount 0x01) (x86-signdiff16 lhs eRes) 0b0) state)))
+    (let ((ocState (x86-predicated-flag CFIdx cCount (bv-extract 0 0 (bv-lshr lhs eCountM1)) oState)))
+    (bv-concat eRes ocState)))))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-rcr32::(-> Dword Byte MachineState MachineStateRes32)
+  (lambda (lhs::Dword rhs::Byte state::MachineState)
+    (let ((eCount (bv-and rhs 0x1F)))
+    (let ((cCount (bool-to-bit (= eCount 0x00))))
+    (let ((eCountExt (bv-zero-extend eCount 24)))
+    (let ((eCountM1 (bv-zero-extend (bv-sub eCount 0x01) 24)))
+    (let ((eCFExt (bv-zero-extend (getflag CFIdx state) 31)))
+    (let ((eRes (ite (= eCount 0x00) lhs (bv-or (bv-lshr (bv-or (bv-shl eCFExt 0x0000001F) (bv-lshr lhs 0x00000001)) eCountM1) (bv-shl lhs (bv-sub 0x0000001F eCountM1))))))
+    (let ((oState (x86-predicated-flag OFIdx cCount (ite (= eCount 0x01) (x86-signdiff32 lhs eRes) 0b0) state)))
+    (let ((ocState (x86-predicated-flag CFIdx cCount (bv-extract 0 0 (bv-lshr lhs eCountM1)) oState)))
+    (bv-concat eRes ocState)))))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-badstate::(-> MachineState DecodedMachineState)
+  (lambda (state::MachineState)
+    (bv-concat 0x0 state)
+  ) ; end lambda
+) ; end define function
+
+(define x86-insnlength::(-> (bitvector 4) Bit Bit (bitvector 4))
+	(lambda (base::(bitvector 4) opsize::Bit addrsize::Bit)
+	  (bv-add base (bv-zero-extend opsize 3) (bv-zero-extend addrsize 3))
+	  ;base
+	)
+)
+
+(define x86-done-insn::(-> MachineState (bitvector 4) Bit Bit DecodedMachineState)
+  (lambda (state::MachineState base::(bitvector 4) opsize::Bit addrsize::Bit)
+  	(bv-concat (x86-insnlength base opsize addrsize) state)
+  )
+)
+
+
+(define x86-singlebyte-0x0F-0x00::(-> Byte MachineState Bit Bit DecodedMachineState)
+  (lambda (eip::Byte state::MachineState opsize::Bit addrsize::Bit)
+    (let ((opcode (get-byte eip)))
+    (let ((eip0 (bv-add eip 0x01)))
+    (ite (= 0x00 opcode) ; add Eb, Gb
+      (let ((modrm (get-byte eip0)))
+      (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+      (let ((lhsidx (bv-extract 2 0 modrm)))
+      (let ((rhsidx (bv-extract 5 3 modrm)))
+      (let ((lhs (getreg8 lhsidx state)))
+      (let ((rhs (getreg8 rhsidx state)))
+      (let ((mrr8 (x86-add8 lhs rhs state)))
+      (let ((ms (x86-store-res8 mrr8 lhsidx)))
+      (let ((ms1 (putextra (bool-to-bit extra) ms)))
+      (x86-done-insn ms1 0x2 opsize addrsize)
+      )))))))))
+    (ite (= 0x01 opcode) ; add Ev, Gv
+      (let ((modrm (get-byte eip0)))
+      ; if 16-bit
+        (ite (= 0b1 opsize)
+        (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+        (let ((lhsidx (bv-extract 2 0 modrm)))
+        (let ((rhsidx (bv-extract 5 3 modrm)))
+        (let ((lhs (getreg16 lhsidx state)))
+        (let ((rhs (getreg16 rhsidx state)))
+        (let ((mrr16 (x86-add16 lhs rhs state)))
+        (let ((ms (x86-store-res16 mrr16 lhsidx)))
+        (let ((ms1 (putextra (bool-to-bit extra) ms)))
+        (x86-done-insn ms1 0x2 opsize addrsize)
+        ))))))))
+     ; if 32-bit
+        (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+        (let ((lhsidx (bv-extract 2 0 modrm)))
+        (let ((rhsidx (bv-extract 5 3 modrm)))
+        (let ((lhs (getreg32 lhsidx state)))
+        (let ((rhs (getreg32 rhsidx state)))
+        (let ((mrr32 (x86-add32 lhs rhs state)))
+        (let ((ms (x86-store-res32 mrr32 lhsidx)))
+        (let ((ms1 (putextra (bool-to-bit extra) ms)))
+        (x86-done-insn ms1 0x2 opsize addrsize)
+        )))))))))
+      )
+    (ite (= 0x02 opcode) ; add Gb, Eb
+      (let ((modrm (get-byte eip0)))
+      (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+      (let ((lhsidx (bv-extract 5 3 modrm)))
+      (let ((rhsidx (bv-extract 2 0 modrm)))
+      (let ((lhs (getreg8 lhsidx state)))
+      (let ((rhs (getreg8 rhsidx state)))
+      (let ((mrr8 (x86-add8 lhs rhs state)))
+      (let ((ms (x86-store-res8 mrr8 lhsidx)))
+      (let ((ms1 (putextra (bool-to-bit extra) ms)))
+      (x86-done-insn ms1 0x2 opsize addrsize)
+      )))))))))
+    (ite (= 0x03 opcode) ; add Gv, Ev
+      (let ((modrm (get-byte eip0)))
+      ; if 16-bit
+        (ite (= 0b1 opsize)
+        (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+        (let ((lhsidx (bv-extract 5 3 modrm)))
+        (let ((rhsidx (bv-extract 2 0 modrm)))
+        (let ((lhs (getreg16 lhsidx state)))
+        (let ((rhs (getreg16 rhsidx state)))
+        (let ((mrr16 (x86-add16 lhs rhs state)))
+        (let ((ms (x86-store-res16 mrr16 lhsidx)))
+        (let ((ms1 (putextra (bool-to-bit extra) ms)))
+        (x86-done-insn ms1 0x2 opsize addrsize)
+        ))))))))
+     ; if 32-bit
+        (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+        (let ((lhsidx (bv-extract 5 3 modrm)))
+        (let ((rhsidx (bv-extract 2 0 modrm)))
+        (let ((lhs (getreg32 lhsidx state)))
+        (let ((rhs (getreg32 rhsidx state)))
+        (let ((mrr32 (x86-add32 lhs rhs state)))
+        (let ((ms (x86-store-res32 mrr32 lhsidx)))
+        (let ((ms1 (putextra (bool-to-bit extra) ms)))
+        (x86-done-insn ms1 0x2 opsize addrsize)
+        )))))))))
+      )
+    (ite (= 0x04 opcode) ; add AL, Ib
+      (let ((lhs (getreg8 ALIdx state)))
+      (let ((rhs (get-byte eip0)))
+      (let ((mrr8 (x86-add8 lhs rhs state)))
+      (let ((ms (x86-store-res8 mrr8 ALIdx)))
+      (x86-done-insn ms 0x2 opsize addrsize)
+      ))))
+    (ite (= 0x05 opcode) ; add rAX, Iz
+      ; if 16-bit
+      (ite (= 0b1 opsize)
+        (let ((lhs (getreg16 AxIdx state)))
+        (let ((rhs (get-word eip0)))
+        (let ((mrr16 (x86-add16 lhs rhs state)))
+        (let ((ms (x86-store-res16 mrr16 AxIdx)))
+        (x86-done-insn ms 0x3 opsize addrsize)
+        ))))
+     ; if 32-bit
+        (let ((lhs (getreg32 EaxIdx state)))
+        (let ((rhs (get-dword eip0)))
+        (let ((mrr32 (x86-add32 lhs rhs state)))
+        (let ((ms (x86-store-res32 mrr32 EaxIdx)))
+        (x86-done-insn ms 0x5 opsize addrsize)
+        ))))
+      )
+    (ite (= 0x06 opcode) ; push ES
+      (x86-badstate state)
+    (ite (= 0x07 opcode) ; pop ES
+      (x86-badstate state)
+    (ite (= 0x08 opcode) ; or Eb, Gb 
+      (let ((modrm (get-byte eip0)))
+      (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+      (let ((lhsidx (bv-extract 2 0 modrm)))
+      (let ((rhsidx (bv-extract 5 3 modrm)))
+      (let ((lhs (getreg8 lhsidx state)))
+      (let ((rhs (getreg8 rhsidx state)))
+      (let ((mrr8 (x86-or8 lhs rhs state)))
+      (let ((ms (x86-store-res8 mrr8 lhsidx)))
+      (let ((ms1 (putextra (bool-to-bit extra) ms)))
+      (x86-done-insn ms1 0x2 opsize addrsize)
+      )))))))))
+    (ite (= 0x09 opcode) ; or Ev, Gv 
+      (let ((modrm (get-byte eip0)))
+      ; if 16-bit
+        (ite (= 0b1 opsize)
+        (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+        (let ((lhsidx (bv-extract 2 0 modrm)))
+        (let ((rhsidx (bv-extract 5 3 modrm)))
+        (let ((lhs (getreg16 lhsidx state)))
+        (let ((rhs (getreg16 rhsidx state)))
+        (let ((mrr16 (x86-or16 lhs rhs state)))
+        (let ((ms (x86-store-res16 mrr16 lhsidx)))
+        (let ((ms1 (putextra (bool-to-bit extra) ms)))
+        (x86-done-insn ms1 0x2 opsize addrsize)
+        ))))))))
+     ; if 32-bit
+        (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+        (let ((lhsidx (bv-extract 2 0 modrm)))
+        (let ((rhsidx (bv-extract 5 3 modrm)))
+        (let ((lhs (getreg32 lhsidx state)))
+        (let ((rhs (getreg32 rhsidx state)))
+        (let ((mrr32 (x86-or32 lhs rhs state)))
+        (let ((ms (x86-store-res32 mrr32 lhsidx)))
+        (let ((ms1 (putextra (bool-to-bit extra) ms)))
+        (x86-done-insn ms1 0x2 opsize addrsize)
+        )))))))))
+      )
+    (ite (= 0x0A opcode) ; or Gb, Eb 
+      (let ((modrm (get-byte eip0)))
+      (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+      (let ((lhsidx (bv-extract 5 3 modrm)))
+      (let ((rhsidx (bv-extract 2 0 modrm)))
+      (let ((lhs (getreg8 lhsidx state)))
+      (let ((rhs (getreg8 rhsidx state)))
+      (let ((mrr8 (x86-or8 lhs rhs state)))
+      (let ((ms (x86-store-res8 mrr8 lhsidx)))
+      (let ((ms1 (putextra (bool-to-bit extra) ms)))
+      (x86-done-insn ms1 0x2 opsize addrsize)
+      )))))))))
+    (ite (= 0x0B opcode) ; or Gv, Ev 
+      (let ((modrm (get-byte eip0)))
+      ; if 16-bit
+        (ite (= 0b1 opsize)
+        (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+        (let ((lhsidx (bv-extract 5 3 modrm)))
+        (let ((rhsidx (bv-extract 2 0 modrm)))
+        (let ((lhs (getreg16 lhsidx state)))
+        (let ((rhs (getreg16 rhsidx state)))
+        (let ((mrr16 (x86-or16 lhs rhs state)))
+        (let ((ms (x86-store-res16 mrr16 lhsidx)))
+        (let ((ms1 (putextra (bool-to-bit extra) ms)))
+        (x86-done-insn ms1 0x2 opsize addrsize)
+        ))))))))
+     ; if 32-bit
+        (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+        (let ((lhsidx (bv-extract 5 3 modrm)))
+        (let ((rhsidx (bv-extract 2 0 modrm)))
+        (let ((lhs (getreg32 lhsidx state)))
+        (let ((rhs (getreg32 rhsidx state)))
+        (let ((mrr32 (x86-or32 lhs rhs state)))
+        (let ((ms (x86-store-res32 mrr32 lhsidx)))
+        (let ((ms1 (putextra (bool-to-bit extra) ms)))
+        (x86-done-insn ms1 0x2 opsize addrsize)
+        )))))))))
+      )
+    (ite (= 0x0C opcode) ; or AL, Ib 
+      (let ((lhs (getreg8 ALIdx state)))
+      (let ((rhs (get-byte (bv-add eip 0x01))))
+      (let ((mrr8 (x86-or8 lhs rhs state)))
+      (let ((ms (x86-store-res8 mrr8 ALIdx)))
+      (x86-done-insn ms 0x2 opsize addrsize)
+      ))))
+    (ite (= 0x0D opcode) ; or rAX, Iz
+      ; if 16-bit
+      (ite (= 0b1 opsize)
+        (let ((lhs (getreg16 AxIdx state)))
+        (let ((rhs (get-word eip0)))
+        (let ((mrr16 (x86-or16 lhs rhs state)))
+        (let ((ms (x86-store-res16 mrr16 AxIdx)))
+        (x86-done-insn ms 0x3 opsize addrsize)
+        ))))
+     ; if 32-bit
+        (let ((lhs (getreg32 EaxIdx state)))
+        (let ((rhs (get-dword eip0)))
+        (let ((mrr32 (x86-or32 lhs rhs state)))
+        (let ((ms (x86-store-res32 mrr32 EaxIdx)))
+        (x86-done-insn ms 0x5 opsize addrsize)
+        ))))
+      )
+    (ite (= 0x0E opcode) ; push CS    
+      (x86-badstate state)
+    ; (ite (= 0x0F opcode) ; two-byte opcodes
+      (x86-badstate state)
+    ))))))))))))))))
+    )
+  ) ; end lambda
+) ; end define function
+
+(define x86-singlebyte-0x1F-0x10::(-> Byte MachineState Bit Bit DecodedMachineState)
+  (lambda (eip::Byte state::MachineState opsize::Bit addrsize::Bit)
+    (let ((opcode (get-byte eip)))
+    (let ((eip0 (bv-add eip 0x01)))
+    (ite (= 0x10 opcode) ; adc Eb, Gb
+      (let ((modrm (get-byte eip0)))
+      (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+      (let ((lhsidx (bv-extract 2 0 modrm)))
+      (let ((rhsidx (bv-extract 5 3 modrm)))
+      (let ((lhs (getreg8 lhsidx state)))
+      (let ((rhs (getreg8 rhsidx state)))
+      (let ((mrr8 (x86-adc8 lhs rhs state)))
+      (let ((ms (x86-store-res8 mrr8 lhsidx)))
+      (let ((ms1 (putextra (bool-to-bit extra) ms)))
+      (x86-done-insn ms1 0x2 opsize addrsize)
+      )))))))))
+    (ite (= 0x11 opcode) ; adc Ev, Gv
+      (let ((modrm (get-byte eip0)))
+      ; if 16-bit
+        (ite (= 0b1 opsize)
+        (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+        (let ((lhsidx (bv-extract 2 0 modrm)))
+        (let ((rhsidx (bv-extract 5 3 modrm)))
+        (let ((lhs (getreg16 lhsidx state)))
+        (let ((rhs (getreg16 rhsidx state)))
+        (let ((mrr16 (x86-adc16 lhs rhs state)))
+        (let ((ms (x86-store-res16 mrr16 lhsidx)))
+        (let ((ms1 (putextra (bool-to-bit extra) ms)))
+        (x86-done-insn ms1 0x2 opsize addrsize)
+        ))))))))
+     ; if 32-bit
+        (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+        (let ((lhsidx (bv-extract 2 0 modrm)))
+        (let ((rhsidx (bv-extract 5 3 modrm)))
+        (let ((lhs (getreg32 lhsidx state)))
+        (let ((rhs (getreg32 rhsidx state)))
+        (let ((mrr32 (x86-adc32 lhs rhs state)))
+        (let ((ms (x86-store-res32 mrr32 lhsidx)))
+        (let ((ms1 (putextra (bool-to-bit extra) ms)))
+        (x86-done-insn ms1 0x2 opsize addrsize)
+        )))))))))
+      )
+    (ite (= 0x12 opcode) ; adc Gb, Eb
+      (let ((modrm (get-byte eip0)))
+      (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+      (let ((lhsidx (bv-extract 5 3 modrm)))
+      (let ((rhsidx (bv-extract 2 0 modrm)))
+      (let ((lhs (getreg8 lhsidx state)))
+      (let ((rhs (getreg8 rhsidx state)))
+      (let ((mrr8 (x86-adc8 lhs rhs state)))
+      (let ((ms (x86-store-res8 mrr8 lhsidx)))
+      (let ((ms1 (putextra (bool-to-bit extra) ms)))
+      (x86-done-insn ms1 0x2 opsize addrsize)
+      )))))))))
+    (ite (= 0x13 opcode) ; adc Gv, Ev
+      (let ((modrm (get-byte eip0)))
+      ; if 16-bit
+        (ite (= 0b1 opsize)
+        (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+        (let ((lhsidx (bv-extract 5 3 modrm)))
+        (let ((rhsidx (bv-extract 2 0 modrm)))
+        (let ((lhs (getreg16 lhsidx state)))
+        (let ((rhs (getreg16 rhsidx state)))
+        (let ((mrr16 (x86-adc16 lhs rhs state)))
+        (let ((ms (x86-store-res16 mrr16 lhsidx)))
+        (let ((ms1 (putextra (bool-to-bit extra) ms)))
+        (x86-done-insn ms1 0x2 opsize addrsize)
+        ))))))))
+     ; if 32-bit
+        (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+        (let ((lhsidx (bv-extract 5 3 modrm)))
+        (let ((rhsidx (bv-extract 2 0 modrm)))
+        (let ((lhs (getreg32 lhsidx state)))
+        (let ((rhs (getreg32 rhsidx state)))
+        (let ((mrr32 (x86-adc32 lhs rhs state)))
+        (let ((ms (x86-store-res32 mrr32 lhsidx)))
+        (let ((ms1 (putextra (bool-to-bit extra) ms)))
+        (x86-done-insn ms1 0x2 opsize addrsize)
+        )))))))))
+      )
+    (ite (= 0x14 opcode) ; adc AL, Ib
+      (let ((lhs (getreg8 ALIdx state)))
+      (let ((rhs (get-byte eip0)))
+      (let ((mrr8 (x86-adc8 lhs rhs state)))
+      (let ((ms (x86-store-res8 mrr8 ALIdx)))
+      (x86-done-insn ms 0x2 opsize addrsize)
+      ))))
+    (ite (= 0x15 opcode) ; adc rAX, Iz
+      ; if 16-bit
+      (ite (= 0b1 opsize)
+        (let ((lhs (getreg16 AxIdx state)))
+        (let ((rhs (get-word eip0)))
+        (let ((mrr16 (x86-adc16 lhs rhs state)))
+        (let ((ms (x86-store-res16 mrr16 AxIdx)))
+        (x86-done-insn ms 0x3 opsize addrsize)
+        ))))
+     ; if 32-bit
+        (let ((lhs (getreg32 EaxIdx state)))
+        (let ((rhs (get-dword eip0)))
+        (let ((mrr32 (x86-adc32 lhs rhs state)))
+        (let ((ms (x86-store-res32 mrr32 EaxIdx)))
+        (x86-done-insn ms 0x5 opsize addrsize)
+        ))))
+      )
+    (ite (= 0x16 opcode) ; push SS
+      (x86-badstate state)
+    (ite (= 0x17 opcode) ; pop SS
+      (x86-badstate state)
+    (ite (= 0x18 opcode) ; sbb Eb, Gb 
+      (let ((modrm (get-byte eip0)))
+      (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+      (let ((lhsidx (bv-extract 2 0 modrm)))
+      (let ((rhsidx (bv-extract 5 3 modrm)))
+      (let ((lhs (getreg8 lhsidx state)))
+      (let ((rhs (getreg8 rhsidx state)))
+      (let ((mrr8 (x86-sbb8 lhs rhs state)))
+      (let ((ms (x86-store-res8 mrr8 lhsidx)))
+      (let ((ms1 (putextra (bool-to-bit extra) ms)))
+      (x86-done-insn ms1 0x2 opsize addrsize)
+      )))))))))
+    (ite (= 0x19 opcode) ; sbb Ev, Gv 
+      (let ((modrm (get-byte eip0)))
+      ; if 16-bit
+        (ite (= 0b1 opsize)
+        (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+        (let ((lhsidx (bv-extract 2 0 modrm)))
+        (let ((rhsidx (bv-extract 5 3 modrm)))
+        (let ((lhs (getreg16 lhsidx state)))
+        (let ((rhs (getreg16 rhsidx state)))
+        (let ((mrr16 (x86-sbb16 lhs rhs state)))
+        (let ((ms (x86-store-res16 mrr16 lhsidx)))
+        (let ((ms1 (putextra (bool-to-bit extra) ms)))
+        (x86-done-insn ms1 0x2 opsize addrsize)
+        ))))))))
+     ; if 32-bit
+        (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+        (let ((lhsidx (bv-extract 2 0 modrm)))
+        (let ((rhsidx (bv-extract 5 3 modrm)))
+        (let ((lhs (getreg32 lhsidx state)))
+        (let ((rhs (getreg32 rhsidx state)))
+        (let ((mrr32 (x86-sbb32 lhs rhs state)))
+        (let ((ms (x86-store-res32 mrr32 lhsidx)))
+        (let ((ms1 (putextra (bool-to-bit extra) ms)))
+        (x86-done-insn ms1 0x2 opsize addrsize)
+        )))))))))
+      )
+    (ite (= 0x1A opcode) ; sbb Gb, Eb 
+      (let ((modrm (get-byte eip0)))
+      (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+      (let ((lhsidx (bv-extract 5 3 modrm)))
+      (let ((rhsidx (bv-extract 2 0 modrm)))
+      (let ((lhs (getreg8 lhsidx state)))
+      (let ((rhs (getreg8 rhsidx state)))
+      (let ((mrr8 (x86-sbb8 lhs rhs state)))
+      (let ((ms (x86-store-res8 mrr8 lhsidx)))
+      (let ((ms1 (putextra (bool-to-bit extra) ms)))
+      (x86-done-insn ms1 0x2 opsize addrsize)
+      )))))))))
+    (ite (= 0x1B opcode) ; sbb Gv, Ev 
+      (let ((modrm (get-byte eip0)))
+      ; if 16-bit
+        (ite (= 0b1 opsize)
+        (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+        (let ((lhsidx (bv-extract 5 3 modrm)))
+        (let ((rhsidx (bv-extract 2 0 modrm)))
+        (let ((lhs (getreg16 lhsidx state)))
+        (let ((rhs (getreg16 rhsidx state)))
+        (let ((mrr16 (x86-sbb16 lhs rhs state)))
+        (let ((ms (x86-store-res16 mrr16 lhsidx)))
+        (let ((ms1 (putextra (bool-to-bit extra) ms)))
+        (x86-done-insn ms1 0x2 opsize addrsize)
+        ))))))))
+     ; if 32-bit
+        (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+        (let ((lhsidx (bv-extract 5 3 modrm)))
+        (let ((rhsidx (bv-extract 2 0 modrm)))
+        (let ((lhs (getreg32 lhsidx state)))
+        (let ((rhs (getreg32 rhsidx state)))
+        (let ((mrr32 (x86-sbb32 lhs rhs state)))
+        (let ((ms (x86-store-res32 mrr32 lhsidx)))
+        (let ((ms1 (putextra (bool-to-bit extra) ms)))
+        (x86-done-insn ms1 0x2 opsize addrsize)
+        )))))))))
+      )
+    (ite (= 0x1C opcode) ; sbb AL, Ib 
+      (let ((lhs (getreg8 ALIdx state)))
+      (let ((rhs (get-byte (bv-add eip 0x01))))
+      (let ((mrr8 (x86-sbb8 lhs rhs state)))
+      (let ((ms (x86-store-res8 mrr8 ALIdx)))
+      (x86-done-insn ms 0x2 opsize addrsize)
+      ))))
+    (ite (= 0x1D opcode) ; sbb rAX, Iz
+      ; if 16-bit
+      (ite (= 0b1 opsize)
+        (let ((lhs (getreg16 AxIdx state)))
+        (let ((rhs (get-word eip0)))
+        (let ((mrr16 (x86-sbb16 lhs rhs state)))
+        (let ((ms (x86-store-res16 mrr16 AxIdx)))
+        (x86-done-insn ms 0x3 opsize addrsize)
+        ))))
+     ; if 32-bit
+        (let ((lhs (getreg32 EaxIdx state)))
+        (let ((rhs (get-dword eip0)))
+        (let ((mrr32 (x86-sbb32 lhs rhs state)))
+        (let ((ms (x86-store-res32 mrr32 EaxIdx)))
+        (x86-done-insn ms 0x5 opsize addrsize)
+        ))))
+      )
+    (ite (= 0x1E opcode) ; push DS    
+      (x86-badstate state)
+    ; (ite (= 0x1F opcode) ; pop DS
+      (x86-badstate state)
+    )))))))))))))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-singlebyte-0x2F-0x20::(-> Byte MachineState Bit Bit DecodedMachineState)
+  (lambda (eip::Byte state::MachineState opsize::Bit addrsize::Bit)
+    (let ((opcode (get-byte eip)))
+    (let ((eip0 (bv-add eip 0x01)))
+    (ite (= 0x20 opcode) ; and Eb, Gb
+      (let ((modrm (get-byte eip0)))
+      (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+      (let ((lhsidx (bv-extract 2 0 modrm)))
+      (let ((rhsidx (bv-extract 5 3 modrm)))
+      (let ((lhs (getreg8 lhsidx state)))
+      (let ((rhs (getreg8 rhsidx state)))
+      (let ((mrr8 (x86-and8 lhs rhs state)))
+      (let ((ms (x86-store-res8 mrr8 lhsidx)))
+      (let ((ms1 (putextra (bool-to-bit extra) ms)))
+      (x86-done-insn ms1 0x2 opsize addrsize)
+      )))))))))
+    (ite (= 0x21 opcode) ; and Ev, Gv
+      (let ((modrm (get-byte eip0)))
+      ; if 16-bit
+        (ite (= 0b1 opsize)
+        (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+        (let ((lhsidx (bv-extract 2 0 modrm)))
+        (let ((rhsidx (bv-extract 5 3 modrm)))
+        (let ((lhs (getreg16 lhsidx state)))
+        (let ((rhs (getreg16 rhsidx state)))
+        (let ((mrr16 (x86-and16 lhs rhs state)))
+        (let ((ms (x86-store-res16 mrr16 lhsidx)))
+        (let ((ms1 (putextra (bool-to-bit extra) ms)))
+        (x86-done-insn ms1 0x2 opsize addrsize)
+        ))))))))
+     ; if 32-bit
+        (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+        (let ((lhsidx (bv-extract 2 0 modrm)))
+        (let ((rhsidx (bv-extract 5 3 modrm)))
+        (let ((lhs (getreg32 lhsidx state)))
+        (let ((rhs (getreg32 rhsidx state)))
+        (let ((mrr32 (x86-and32 lhs rhs state)))
+        (let ((ms (x86-store-res32 mrr32 lhsidx)))
+        (let ((ms1 (putextra (bool-to-bit extra) ms)))
+        (x86-done-insn ms1 0x2 opsize addrsize)
+        )))))))))
+      )
+    (ite (= 0x22 opcode) ; and Gb, Eb
+      (let ((modrm (get-byte eip0)))
+      (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+      (let ((lhsidx (bv-extract 5 3 modrm)))
+      (let ((rhsidx (bv-extract 2 0 modrm)))
+      (let ((lhs (getreg8 lhsidx state)))
+      (let ((rhs (getreg8 rhsidx state)))
+      (let ((mrr8 (x86-and8 lhs rhs state)))
+      (let ((ms (x86-store-res8 mrr8 lhsidx)))
+      (let ((ms1 (putextra (bool-to-bit extra) ms)))
+      (x86-done-insn ms1 0x2 opsize addrsize)
+      )))))))))
+    (ite (= 0x23 opcode) ; and Gv, Ev
+      (let ((modrm (get-byte eip0)))
+      ; if 16-bit
+        (ite (= 0b1 opsize)
+        (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+        (let ((lhsidx (bv-extract 5 3 modrm)))
+        (let ((rhsidx (bv-extract 2 0 modrm)))
+        (let ((lhs (getreg16 lhsidx state)))
+        (let ((rhs (getreg16 rhsidx state)))
+        (let ((mrr16 (x86-and16 lhs rhs state)))
+        (let ((ms (x86-store-res16 mrr16 lhsidx)))
+        (let ((ms1 (putextra (bool-to-bit extra) ms)))
+        (x86-done-insn ms1 0x2 opsize addrsize)
+        ))))))))
+     ; if 32-bit
+        (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+        (let ((lhsidx (bv-extract 5 3 modrm)))
+        (let ((rhsidx (bv-extract 2 0 modrm)))
+        (let ((lhs (getreg32 lhsidx state)))
+        (let ((rhs (getreg32 rhsidx state)))
+        (let ((mrr32 (x86-and32 lhs rhs state)))
+        (let ((ms (x86-store-res32 mrr32 lhsidx)))
+        (let ((ms1 (putextra (bool-to-bit extra) ms)))
+        (x86-done-insn ms1 0x2 opsize addrsize)
+        )))))))))
+      )
+    (ite (= 0x24 opcode) ; and AL, Ib
+      (let ((lhs (getreg8 ALIdx state)))
+      (let ((rhs (get-byte eip0)))
+      (let ((mrr8 (x86-and8 lhs rhs state)))
+      (let ((ms (x86-store-res8 mrr8 ALIdx)))
+      (x86-done-insn ms 0x2 opsize addrsize)
+      ))))
+    (ite (= 0x25 opcode) ; and rAX, Iz
+      ; if 16-bit
+      (ite (= 0b1 opsize)
+        (let ((lhs (getreg16 AxIdx state)))
+        (let ((rhs (get-word eip0)))
+        (let ((mrr16 (x86-and16 lhs rhs state)))
+        (let ((ms (x86-store-res16 mrr16 AxIdx)))
+        (x86-done-insn ms 0x3 opsize addrsize)
+        ))))
+     ; if 32-bit
+        (let ((lhs (getreg32 EaxIdx state)))
+        (let ((rhs (get-dword eip0)))
+        (let ((mrr32 (x86-and32 lhs rhs state)))
+        (let ((ms (x86-store-res32 mrr32 EaxIdx)))
+        (x86-done-insn ms 0x5 opsize addrsize)
+        ))))
+      )
+    (ite (= 0x26 opcode) ; prefix
+      (x86-badstate state)
+    (ite (= 0x27 opcode) ; daa
+      (x86-badstate state)
+    (ite (= 0x28 opcode) ; sub Eb, Gb 
+      (let ((modrm (get-byte eip0)))
+      (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+      (let ((lhsidx (bv-extract 2 0 modrm)))
+      (let ((rhsidx (bv-extract 5 3 modrm)))
+      (let ((lhs (getreg8 lhsidx state)))
+      (let ((rhs (getreg8 rhsidx state)))
+      (let ((mrr8 (x86-sub8 lhs rhs state)))
+      (let ((ms (x86-store-res8 mrr8 lhsidx)))
+      (let ((ms1 (putextra (bool-to-bit extra) ms)))
+      (x86-done-insn ms1 0x2 opsize addrsize)
+      )))))))))
+    (ite (= 0x29 opcode) ; sub Ev, Gv 
+      (let ((modrm (get-byte eip0)))
+      ; if 16-bit
+        (ite (= 0b1 opsize)
+        (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+        (let ((lhsidx (bv-extract 2 0 modrm)))
+        (let ((rhsidx (bv-extract 5 3 modrm)))
+        (let ((lhs (getreg16 lhsidx state)))
+        (let ((rhs (getreg16 rhsidx state)))
+        (let ((mrr16 (x86-sub16 lhs rhs state)))
+        (let ((ms (x86-store-res16 mrr16 lhsidx)))
+        (let ((ms1 (putextra (bool-to-bit extra) ms)))
+        (x86-done-insn ms1 0x2 opsize addrsize)
+        ))))))))
+     ; if 32-bit
+        (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+        (let ((lhsidx (bv-extract 2 0 modrm)))
+        (let ((rhsidx (bv-extract 5 3 modrm)))
+        (let ((lhs (getreg32 lhsidx state)))
+        (let ((rhs (getreg32 rhsidx state)))
+        (let ((mrr32 (x86-sub32 lhs rhs state)))
+        (let ((ms (x86-store-res32 mrr32 lhsidx)))
+        (let ((ms1 (putextra (bool-to-bit extra) ms)))
+        (x86-done-insn ms1 0x2 opsize addrsize)
+        )))))))))
+      )
+    (ite (= 0x2A opcode) ; sub Gb, Eb 
+      (let ((modrm (get-byte eip0)))
+      (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+      (let ((lhsidx (bv-extract 5 3 modrm)))
+      (let ((rhsidx (bv-extract 2 0 modrm)))
+      (let ((lhs (getreg8 lhsidx state)))
+      (let ((rhs (getreg8 rhsidx state)))
+      (let ((mrr8 (x86-sub8 lhs rhs state)))
+      (let ((ms (x86-store-res8 mrr8 lhsidx)))
+      (let ((ms1 (putextra (bool-to-bit extra) ms)))
+      (x86-done-insn ms1 0x2 opsize addrsize)
+      )))))))))
+    (ite (= 0x2B opcode) ; sub Gv, Ev 
+      (let ((modrm (get-byte eip0)))
+      ; if 16-bit
+        (ite (= 0b1 opsize)
+        (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+        (let ((lhsidx (bv-extract 5 3 modrm)))
+        (let ((rhsidx (bv-extract 2 0 modrm)))
+        (let ((lhs (getreg16 lhsidx state)))
+        (let ((rhs (getreg16 rhsidx state)))
+        (let ((mrr16 (x86-sub16 lhs rhs state)))
+        (let ((ms (x86-store-res16 mrr16 lhsidx)))
+        (let ((ms1 (putextra (bool-to-bit extra) ms)))
+        (x86-done-insn ms1 0x2 opsize addrsize)
+        ))))))))
+     ; if 32-bit
+        (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+        (let ((lhsidx (bv-extract 5 3 modrm)))
+        (let ((rhsidx (bv-extract 2 0 modrm)))
+        (let ((lhs (getreg32 lhsidx state)))
+        (let ((rhs (getreg32 rhsidx state)))
+        (let ((mrr32 (x86-sub32 lhs rhs state)))
+        (let ((ms (x86-store-res32 mrr32 lhsidx)))
+        (let ((ms1 (putextra (bool-to-bit extra) ms)))
+        (x86-done-insn ms1 0x2 opsize addrsize)
+        )))))))))
+      )
+    (ite (= 0x2C opcode) ; sub AL, Ib 
+      (let ((lhs (getreg8 ALIdx state)))
+      (let ((rhs (get-byte (bv-add eip 0x01))))
+      (let ((mrr8 (x86-sub8 lhs rhs state)))
+      (let ((ms (x86-store-res8 mrr8 ALIdx)))
+      (x86-done-insn ms 0x2 opsize addrsize)
+      ))))
+    (ite (= 0x2D opcode) ; sub rAX, Iz
+      ; if 16-bit
+      (ite (= 0b1 opsize)
+        (let ((lhs (getreg16 AxIdx state)))
+        (let ((rhs (get-word eip0)))
+        (let ((mrr16 (x86-sub16 lhs rhs state)))
+        (let ((ms (x86-store-res16 mrr16 AxIdx)))
+        (x86-done-insn ms 0x3 opsize addrsize)
+        ))))
+     ; if 32-bit
+        (let ((lhs (getreg32 EaxIdx state)))
+        (let ((rhs (get-dword eip0)))
+        (let ((mrr32 (x86-sub32 lhs rhs state)))
+        (let ((ms (x86-store-res32 mrr32 EaxIdx)))
+        (x86-done-insn ms 0x5 opsize addrsize)
+        ))))
+      )
+    (ite (= 0x2E opcode) ; prefix
+      (bv-concat 0x0 state)
+    ; (ite (= 0x2F opcode) ; das
+      (x86-badstate state)
+    )))))))))))))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-singlebyte-0x3F-0x30::(-> Byte MachineState Bit Bit DecodedMachineState)
+  (lambda (eip::Byte state::MachineState opsize::Bit addrsize::Bit)
+    (let ((opcode (get-byte eip)))
+    (let ((eip0 (bv-add eip 0x01)))
+    (ite (= 0x30 opcode) ; xor Eb, Gb
+      (let ((modrm (get-byte eip0)))
+      (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+      (let ((lhsidx (bv-extract 2 0 modrm)))
+      (let ((rhsidx (bv-extract 5 3 modrm)))
+      (let ((lhs (getreg8 lhsidx state)))
+      (let ((rhs (getreg8 rhsidx state)))
+      (let ((mrr8 (x86-xor8 lhs rhs state)))
+      (let ((ms (x86-store-res8 mrr8 lhsidx)))
+      (let ((ms1 (putextra (bool-to-bit extra) ms)))
+      (x86-done-insn ms1 0x2 opsize addrsize)
+      )))))))))
+    (ite (= 0x31 opcode) ; xor Ev, Gv
+      (let ((modrm (get-byte eip0)))
+      ; if 16-bit
+        (ite (= 0b1 opsize)
+        (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+        (let ((lhsidx (bv-extract 2 0 modrm)))
+        (let ((rhsidx (bv-extract 5 3 modrm)))
+        (let ((lhs (getreg16 lhsidx state)))
+        (let ((rhs (getreg16 rhsidx state)))
+        (let ((mrr16 (x86-xor16 lhs rhs state)))
+        (let ((ms (x86-store-res16 mrr16 lhsidx)))
+        (let ((ms1 (putextra (bool-to-bit extra) ms)))
+        (x86-done-insn ms1 0x2 opsize addrsize)
+        ))))))))
+     ; if 32-bit
+        (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+        (let ((lhsidx (bv-extract 2 0 modrm)))
+        (let ((rhsidx (bv-extract 5 3 modrm)))
+        (let ((lhs (getreg32 lhsidx state)))
+        (let ((rhs (getreg32 rhsidx state)))
+        (let ((mrr32 (x86-xor32 lhs rhs state)))
+        (let ((ms (x86-store-res32 mrr32 lhsidx)))
+        (let ((ms1 (putextra (bool-to-bit extra) ms)))
+        (x86-done-insn ms1 0x2 opsize addrsize)
+        )))))))))
+      )
+    (ite (= 0x32 opcode) ; xor Gb, Eb
+      (let ((modrm (get-byte eip0)))
+      (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+      (let ((lhsidx (bv-extract 5 3 modrm)))
+      (let ((rhsidx (bv-extract 2 0 modrm)))
+      (let ((lhs (getreg8 lhsidx state)))
+      (let ((rhs (getreg8 rhsidx state)))
+      (let ((mrr8 (x86-xor8 lhs rhs state)))
+      (let ((ms (x86-store-res8 mrr8 lhsidx)))
+      (let ((ms1 (putextra (bool-to-bit extra) ms)))
+      (x86-done-insn ms1 0x2 opsize addrsize)
+      )))))))))
+    (ite (= 0x33 opcode) ; xor Gv, Ev
+      (let ((modrm (get-byte eip0)))
+      ; if 16-bit
+        (ite (= 0b1 opsize)
+        (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+        (let ((lhsidx (bv-extract 5 3 modrm)))
+        (let ((rhsidx (bv-extract 2 0 modrm)))
+        (let ((lhs (getreg16 lhsidx state)))
+        (let ((rhs (getreg16 rhsidx state)))
+        (let ((mrr16 (x86-xor16 lhs rhs state)))
+        (let ((ms (x86-store-res16 mrr16 lhsidx)))
+        (let ((ms1 (putextra (bool-to-bit extra) ms)))
+        (x86-done-insn ms1 0x2 opsize addrsize)
+        ))))))))
+     ; if 32-bit
+        (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+        (let ((lhsidx (bv-extract 5 3 modrm)))
+        (let ((rhsidx (bv-extract 2 0 modrm)))
+        (let ((lhs (getreg32 lhsidx state)))
+        (let ((rhs (getreg32 rhsidx state)))
+        (let ((mrr32 (x86-xor32 lhs rhs state)))
+        (let ((ms (x86-store-res32 mrr32 lhsidx)))
+        (let ((ms1 (putextra (bool-to-bit extra) ms)))
+        (x86-done-insn ms1 0x2 opsize addrsize)
+        )))))))))
+      )
+    (ite (= 0x34 opcode) ; xor AL, Ib
+      (let ((lhs (getreg8 ALIdx state)))
+      (let ((rhs (get-byte eip0)))
+      (let ((mrr8 (x86-xor8 lhs rhs state)))
+      (let ((ms (x86-store-res8 mrr8 ALIdx)))
+      (x86-done-insn ms 0x2 opsize addrsize)
+      ))))
+    (ite (= 0x35 opcode) ; xor rAX, Iz
+      ; if 16-bit
+      (ite (= 0b1 opsize)
+        (let ((lhs (getreg16 AxIdx state)))
+        (let ((rhs (get-word eip0)))
+        (let ((mrr16 (x86-xor16 lhs rhs state)))
+        (let ((ms (x86-store-res16 mrr16 AxIdx)))
+        (x86-done-insn ms 0x3 opsize addrsize)
+        ))))
+     ; if 32-bit
+        (let ((lhs (getreg32 EaxIdx state)))
+        (let ((rhs (get-dword eip0)))
+        (let ((mrr32 (x86-xor32 lhs rhs state)))
+        (let ((ms (x86-store-res32 mrr32 EaxIdx)))
+        (x86-done-insn ms 0x5 opsize addrsize)
+        ))))
+      )
+    (ite (= 0x36 opcode) ; prefix
+      (x86-badstate state)
+    (ite (= 0x37 opcode) ; aaa
+      (x86-badstate state)
+    (ite (= 0x38 opcode) ; cmp Eb, Gb 
+      (let ((modrm (get-byte eip0)))
+      (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+      (let ((lhsidx (bv-extract 2 0 modrm)))
+      (let ((rhsidx (bv-extract 5 3 modrm)))
+      (let ((lhs (getreg8 lhsidx state)))
+      (let ((rhs (getreg8 rhsidx state)))
+      (let ((mrr8 (x86-sub8 lhs rhs state)))
+      (let ((ms (bv-extract 263 0 mrr8)))
+      (let ((ms1 (putextra (bool-to-bit extra) ms)))
+      (x86-done-insn ms1 0x2 opsize addrsize)
+      )))))))))
+    (ite (= 0x39 opcode) ; cmp Ev, Gv 
+      (let ((modrm (get-byte eip0)))
+      ; if 16-bit
+        (ite (= 0b1 opsize)
+        (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+        (let ((lhsidx (bv-extract 2 0 modrm)))
+        (let ((rhsidx (bv-extract 5 3 modrm)))
+        (let ((lhs (getreg16 lhsidx state)))
+        (let ((rhs (getreg16 rhsidx state)))
+        (let ((mrr16 (x86-sub16 lhs rhs state)))
+        (let ((ms (bv-extract 263 0 mrr16)))
+        (let ((ms1 (putextra (bool-to-bit extra) ms)))
+        (x86-done-insn ms1 0x2 opsize addrsize)
+        ))))))))
+     ; if 32-bit
+        (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+        (let ((lhsidx (bv-extract 2 0 modrm)))
+        (let ((rhsidx (bv-extract 5 3 modrm)))
+        (let ((lhs (getreg32 lhsidx state)))
+        (let ((rhs (getreg32 rhsidx state)))
+        (let ((mrr32 (x86-sub32 lhs rhs state)))
+        (let ((ms (bv-extract 263 0 mrr32)))
+        (let ((ms1 (putextra (bool-to-bit extra) ms)))
+        (x86-done-insn ms1 0x2 opsize addrsize)
+        )))))))))
+      )
+    (ite (= 0x3A opcode) ; cmp Gb, Eb 
+      (let ((modrm (get-byte eip0)))
+      (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+      (let ((lhsidx (bv-extract 5 3 modrm)))
+      (let ((rhsidx (bv-extract 2 0 modrm)))
+      (let ((lhs (getreg8 lhsidx state)))
+      (let ((rhs (getreg8 rhsidx state)))
+      (let ((mrr8 (x86-sub8 lhs rhs state)))
+      (let ((ms (bv-extract 263 0 mrr8)))
+      (let ((ms1 (putextra (bool-to-bit extra) ms)))
+      (x86-done-insn ms1 0x2 opsize addrsize)
+      )))))))))
+    (ite (= 0x3B opcode) ; cmp Gv, Ev 
+      (let ((modrm (get-byte eip0)))
+      ; if 16-bit
+        (ite (= 0b1 opsize)
+        (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+        (let ((lhsidx (bv-extract 5 3 modrm)))
+        (let ((rhsidx (bv-extract 2 0 modrm)))
+        (let ((lhs (getreg16 lhsidx state)))
+        (let ((rhs (getreg16 rhsidx state)))
+        (let ((mrr16 (x86-sub16 lhs rhs state)))
+        (let ((ms (bv-extract 263 0 mrr16)))
+        (let ((ms1 (putextra (bool-to-bit extra) ms)))
+        (x86-done-insn ms1 0x2 opsize addrsize)
+        ))))))))
+     ; if 32-bit
+        (let ((extra (= (bv-extract 7 6 modrm) 0b11)))
+        (let ((lhsidx (bv-extract 5 3 modrm)))
+        (let ((rhsidx (bv-extract 2 0 modrm)))
+        (let ((lhs (getreg32 lhsidx state)))
+        (let ((rhs (getreg32 rhsidx state)))
+        (let ((mrr32 (x86-sub32 lhs rhs state)))
+        (let ((ms (bv-extract 263 0 mrr32)))
+        (let ((ms1 (putextra (bool-to-bit extra) ms)))
+        (x86-done-insn ms1 0x2 opsize addrsize)
+        )))))))))
+      )
+    (ite (= 0x3C opcode) ; cmp AL, Ib 
+      (let ((lhs (getreg8 ALIdx state)))
+      (let ((rhs (get-byte (bv-add eip 0x01))))
+      (let ((mrr8 (x86-sub8 lhs rhs state)))
+      (let ((ms (bv-extract 263 0 mrr8)))
+      (x86-done-insn ms 0x2 opsize addrsize)
+      ))))
+    (ite (= 0x3D opcode) ; cmp rAX, Iz
+      ; if 16-bit
+      (ite (= 0b1 opsize)
+        (let ((lhs (getreg16 AxIdx state)))
+        (let ((rhs (get-word eip0)))
+        (let ((mrr16 (x86-sub16 lhs rhs state)))
+        (let ((ms (bv-extract 263 0 mrr16)))
+        (x86-done-insn ms 0x3 opsize addrsize)
+        ))))
+     ; if 32-bit
+        (let ((lhs (getreg32 EaxIdx state)))
+        (let ((rhs (get-dword eip0)))
+        (let ((mrr32 (x86-sub32 lhs rhs state)))
+        (let ((ms (bv-extract 263 0 mrr32)))
+        (x86-done-insn ms 0x5 opsize addrsize)
+        ))))
+      )
+    (ite (= 0x3E opcode) ; prefix
+      (x86-badstate state)
+    ; (ite (= 0x3F opcode) ; aas
+      (x86-badstate state)
+    )))))))))))))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-singlebyte-0x4F-0x40::(-> Byte MachineState Bit Bit DecodedMachineState)
+  (lambda (eip::Byte state::MachineState opsize::Bit addrsize::Bit)
+    (let ((opcode (get-byte eip)))
+    (let ((eip0 (bv-add eip 0x01)))
+    (ite (= 0x40 opcode) ; inc eAX
+      (let ((lhsidx EaxIdx))
+      (ite (= 0b1 opsize)
+        (let ((lhs (getreg16 lhsidx state)))
+        (let ((mrr16 (x86-inc16 lhs state)))
+        (let ((ms (x86-store-res16 mrr16 lhsidx)))
+        (x86-done-insn ms 0x1 opsize addrsize)
+        )))
+     ; if 32-bit
+        (let ((lhs (getreg32 lhsidx state)))
+        (let ((mrr32 (x86-inc32 lhs state)))
+        (let ((ms (x86-store-res32 mrr32 lhsidx)))
+        (x86-done-insn ms 0x1 opsize addrsize)
+        )))
+      ))
+    (ite (= 0x41 opcode) ; inc eCX
+      (let ((lhsidx EcxIdx))
+      (ite (= 0b1 opsize)
+        (let ((lhs (getreg16 lhsidx state)))
+        (let ((mrr16 (x86-inc16 lhs state)))
+        (let ((ms (x86-store-res16 mrr16 lhsidx)))
+        (x86-done-insn ms 0x1 opsize addrsize)
+        )))
+     ; if 32-bit
+        (let ((lhs (getreg32 lhsidx state)))
+        (let ((mrr32 (x86-inc32 lhs state)))
+        (let ((ms (x86-store-res32 mrr32 lhsidx)))
+        (x86-done-insn ms 0x1 opsize addrsize)
+        )))
+      ))
+    (ite (= 0x42 opcode) ; inc eDX
+      (let ((lhsidx EdxIdx))
+      (ite (= 0b1 opsize)
+        (let ((lhs (getreg16 lhsidx state)))
+        (let ((mrr16 (x86-inc16 lhs state)))
+        (let ((ms (x86-store-res16 mrr16 lhsidx)))
+        (x86-done-insn ms 0x1 opsize addrsize)
+        )))
+     ; if 32-bit
+        (let ((lhs (getreg32 lhsidx state)))
+        (let ((mrr32 (x86-inc32 lhs state)))
+        (let ((ms (x86-store-res32 mrr32 lhsidx)))
+        (x86-done-insn ms 0x1 opsize addrsize)
+        )))
+      ))
+    (ite (= 0x43 opcode) ; inc eBX
+      (let ((lhsidx EbxIdx))
+      (ite (= 0b1 opsize)
+        (let ((lhs (getreg16 lhsidx state)))
+        (let ((mrr16 (x86-inc16 lhs state)))
+        (let ((ms (x86-store-res16 mrr16 lhsidx)))
+        (x86-done-insn ms 0x1 opsize addrsize)
+        )))
+     ; if 32-bit
+        (let ((lhs (getreg32 lhsidx state)))
+        (let ((mrr32 (x86-inc32 lhs state)))
+        (let ((ms (x86-store-res32 mrr32 lhsidx)))
+        (x86-done-insn ms 0x1 opsize addrsize)
+        )))
+      ))
+    (ite (= 0x44 opcode) ; inc eSP
+      (let ((lhsidx EspIdx))
+      (ite (= 0b1 opsize)
+        (let ((lhs (getreg16 lhsidx state)))
+        (let ((mrr16 (x86-inc16 lhs state)))
+        (let ((ms (x86-store-res16 mrr16 lhsidx)))
+        (x86-done-insn ms 0x1 opsize addrsize)
+        )))
+     ; if 32-bit
+        (let ((lhs (getreg32 lhsidx state)))
+        (let ((mrr32 (x86-inc32 lhs state)))
+        (let ((ms (x86-store-res32 mrr32 lhsidx)))
+        (x86-done-insn ms 0x1 opsize addrsize)
+        )))
+      ))
+    (ite (= 0x45 opcode) ; inc eBP
+      (let ((lhsidx EbpIdx))
+      (ite (= 0b1 opsize)
+        (let ((lhs (getreg16 lhsidx state)))
+        (let ((mrr16 (x86-inc16 lhs state)))
+        (let ((ms (x86-store-res16 mrr16 lhsidx)))
+        (x86-done-insn ms 0x1 opsize addrsize)
+        )))
+     ; if 32-bit
+        (let ((lhs (getreg32 lhsidx state)))
+        (let ((mrr32 (x86-inc32 lhs state)))
+        (let ((ms (x86-store-res32 mrr32 lhsidx)))
+        (x86-done-insn ms 0x1 opsize addrsize)
+        )))
+      ))
+    (ite (= 0x46 opcode) ; inc eSI
+      (let ((lhsidx EsiIdx))
+      (ite (= 0b1 opsize)
+        (let ((lhs (getreg16 lhsidx state)))
+        (let ((mrr16 (x86-inc16 lhs state)))
+        (let ((ms (x86-store-res16 mrr16 lhsidx)))
+        (x86-done-insn ms 0x1 opsize addrsize)
+        )))
+     ; if 32-bit
+        (let ((lhs (getreg32 lhsidx state)))
+        (let ((mrr32 (x86-inc32 lhs state)))
+        (let ((ms (x86-store-res32 mrr32 lhsidx)))
+        (x86-done-insn ms 0x1 opsize addrsize)
+        )))
+      ))
+    (ite (= 0x47 opcode) ; inc eDI
+      (let ((lhsidx EdiIdx))
+      (ite (= 0b1 opsize)
+        (let ((lhs (getreg16 lhsidx state)))
+        (let ((mrr16 (x86-inc16 lhs state)))
+        (let ((ms (x86-store-res16 mrr16 lhsidx)))
+        (x86-done-insn ms 0x1 opsize addrsize)
+        )))
+     ; if 32-bit
+        (let ((lhs (getreg32 lhsidx state)))
+        (let ((mrr32 (x86-inc32 lhs state)))
+        (let ((ms (x86-store-res32 mrr32 lhsidx)))
+        (x86-done-insn ms 0x1 opsize addrsize)
+        )))
+      ))
+    (ite (= 0x48 opcode) ; dec eAX
+      (let ((lhsidx EaxIdx))
+      (ite (= 0b1 opsize)
+        (let ((lhs (getreg16 lhsidx state)))
+        (let ((mrr16 (x86-dec16 lhs state)))
+        (let ((ms (x86-store-res16 mrr16 lhsidx)))
+        (x86-done-insn ms 0x1 opsize addrsize)
+        )))
+     ; if 32-bit
+        (let ((lhs (getreg32 lhsidx state)))
+        (let ((mrr32 (x86-dec32 lhs state)))
+        (let ((ms (x86-store-res32 mrr32 lhsidx)))
+        (x86-done-insn ms 0x1 opsize addrsize)
+        )))
+      ))
+    (ite (= 0x49 opcode) ; dec eCX
+      (let ((lhsidx EcxIdx))
+      (ite (= 0b1 opsize)
+        (let ((lhs (getreg16 lhsidx state)))
+        (let ((mrr16 (x86-dec16 lhs state)))
+        (let ((ms (x86-store-res16 mrr16 lhsidx)))
+        (x86-done-insn ms 0x1 opsize addrsize)
+        )))
+     ; if 32-bit
+        (let ((lhs (getreg32 lhsidx state)))
+        (let ((mrr32 (x86-dec32 lhs state)))
+        (let ((ms (x86-store-res32 mrr32 lhsidx)))
+        (x86-done-insn ms 0x1 opsize addrsize)
+        )))
+      ))
+    (ite (= 0x4A opcode) ; dec eDX
+      (let ((lhsidx EdxIdx))
+      (ite (= 0b1 opsize)
+        (let ((lhs (getreg16 lhsidx state)))
+        (let ((mrr16 (x86-dec16 lhs state)))
+        (let ((ms (x86-store-res16 mrr16 lhsidx)))
+        (x86-done-insn ms 0x1 opsize addrsize)
+        )))
+     ; if 32-bit
+        (let ((lhs (getreg32 lhsidx state)))
+        (let ((mrr32 (x86-dec32 lhs state)))
+        (let ((ms (x86-store-res32 mrr32 lhsidx)))
+        (x86-done-insn ms 0x1 opsize addrsize)
+        )))
+      ))
+    (ite (= 0x4B opcode) ; dec eBX
+      (let ((lhsidx EbxIdx))
+      (ite (= 0b1 opsize)
+        (let ((lhs (getreg16 lhsidx state)))
+        (let ((mrr16 (x86-dec16 lhs state)))
+        (let ((ms (x86-store-res16 mrr16 lhsidx)))
+        (x86-done-insn ms 0x1 opsize addrsize)
+        )))
+     ; if 32-bit
+        (let ((lhs (getreg32 lhsidx state)))
+        (let ((mrr32 (x86-dec32 lhs state)))
+        (let ((ms (x86-store-res32 mrr32 lhsidx)))
+        (x86-done-insn ms 0x1 opsize addrsize)
+        )))
+      ))
+    (ite (= 0x4C opcode) ; dec eSP
+      (let ((lhsidx EspIdx))
+      (ite (= 0b1 opsize)
+        (let ((lhs (getreg16 lhsidx state)))
+        (let ((mrr16 (x86-dec16 lhs state)))
+        (let ((ms (x86-store-res16 mrr16 lhsidx)))
+        (x86-done-insn ms 0x1 opsize addrsize)
+        )))
+     ; if 32-bit
+        (let ((lhs (getreg32 lhsidx state)))
+        (let ((mrr32 (x86-dec32 lhs state)))
+        (let ((ms (x86-store-res32 mrr32 lhsidx)))
+        (x86-done-insn ms 0x1 opsize addrsize)
+        )))
+      ))
+    (ite (= 0x4D opcode) ; dec eBP
+      (let ((lhsidx EbpIdx))
+      (ite (= 0b1 opsize)
+        (let ((lhs (getreg16 lhsidx state)))
+        (let ((mrr16 (x86-dec16 lhs state)))
+        (let ((ms (x86-store-res16 mrr16 lhsidx)))
+        (x86-done-insn ms 0x1 opsize addrsize)
+        )))
+     ; if 32-bit
+        (let ((lhs (getreg32 lhsidx state)))
+        (let ((mrr32 (x86-dec32 lhs state)))
+        (let ((ms (x86-store-res32 mrr32 lhsidx)))
+        (x86-done-insn ms 0x1 opsize addrsize)
+        )))
+      ))
+    (ite (= 0x4E opcode) ; dec eSI
+      (let ((lhsidx EsiIdx))
+      (ite (= 0b1 opsize)
+        (let ((lhs (getreg16 lhsidx state)))
+        (let ((mrr16 (x86-dec16 lhs state)))
+        (let ((ms (x86-store-res16 mrr16 lhsidx)))
+        (x86-done-insn ms 0x1 opsize addrsize)
+        )))
+     ; if 32-bit
+        (let ((lhs (getreg32 lhsidx state)))
+        (let ((mrr32 (x86-dec32 lhs state)))
+        (let ((ms (x86-store-res32 mrr32 lhsidx)))
+        (x86-done-insn ms 0x1 opsize addrsize)
+        )))
+      ))
+    ; (ite (= 0x4F opcode) ; dec eDI
+      (let ((lhsidx EdiIdx))
+      (ite (= 0b1 opsize)
+        (let ((lhs (getreg16 lhsidx state)))
+        (let ((mrr16 (x86-dec16 lhs state)))
+        (let ((ms (x86-store-res16 mrr16 lhsidx)))
+        (x86-done-insn ms 0x1 opsize addrsize)
+        )))
+     ; if 32-bit
+        (let ((lhs (getreg32 lhsidx state)))
+        (let ((mrr32 (x86-dec32 lhs state)))
+        (let ((ms (x86-store-res32 mrr32 lhsidx)))
+        (x86-done-insn ms 0x1 opsize addrsize)
+        )))
+      ))
+    )))))))))))))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-singlebyte-0x5F-0x50::(-> Byte MachineState Bit Bit DecodedMachineState)
+  (lambda (eip::Byte state::MachineState opsize::Bit addrsize::Bit)
+    ; push/pop rAX-rDI
+    (x86-badstate state)
+  )
+)
+
+(define x86-singlebyte-0x6F-0x60::(-> Byte MachineState Bit Bit DecodedMachineState)
+  (lambda (eip::Byte state::MachineState opsize::Bit addrsize::Bit)
+    (let ((opcode (get-byte eip)))
+    (let ((eip0 (bv-add eip 0x01)))
+    (ite (= 0x60 opcode) ; pushad/pushaw
+      (x86-badstate state)
+    (ite (= 0x61 opcode) ; popad/popaw
+      (x86-badstate state)
+    (ite (= 0x62 opcode) ; bound Gv, Ma
+      (x86-badstate state)
+    (ite (= 0x63 opcode) ; arpl Ew, Gw
+      (x86-badstate state)
+    (ite (= 0x64 opcode) ; prefix
+      (x86-badstate state)
+    (ite (= 0x65 opcode) ; prefix
+      (x86-badstate state)
+    (ite (= 0x66 opcode) ; opsize prefix
+      (x86-badstate state)
+    (ite (= 0x67 opcode) ; addrsize prefix
+      (x86-badstate state)
+    (ite (= 0x68 opcode) ; push Iz
+      (x86-badstate state)
+    (ite (= 0x69 opcode) ; Imul Gv, Ev, Iz
+      (x86-badstate state)
+    (ite (= 0x6A opcode) ; push Ibv
+      (x86-badstate state)
+    (ite (= 0x6B opcode) ; Imul Gv, Ev, Ib
+      (x86-badstate state)
+    (ite (= 0x6C opcode) ; insb Yb, DX
+      (x86-badstate state)
+    (ite (= 0x6D opcode) ; insw/insd
+      (x86-badstate state)
+    (ite (= 0x6E opcode) ; outsb DX, Xb
+      (x86-badstate state)
+    ; (ite (= 0x6F opcode) ; outsw/outsd
+      (x86-badstate state)
+    )))))))))))))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-singlebyte-0x7F-0x70::(-> Byte MachineState Bit Bit DecodedMachineState)
+  (lambda (eip::Byte state::MachineState opsize::Bit addrsize::Bit)
+    ; conditional short jumps
+    (x86-badstate state)
+  )
+)
+
+(define x86-singlebyte-0x8F-0x80::(-> Byte MachineState Bit Bit DecodedMachineState)
+  (lambda (eip::Byte state::MachineState opsize::Bit addrsize::Bit)
+    (let ((opcode (get-byte eip)))
+    (let ((eip0 (bv-add eip 0x01)))   
+    (let ((modrm (get-byte eip0)))
+    (let ((ggg   (bv-extract 5 3 modrm)))
+    (let ((epart (bv-extract 2 0 modrm)))
+    (let ((extra (bool-to-bit (= (bv-extract 7 6 modrm) 0b11))))
+    (let ((newstate (putextra extra state)))
+    (ite (= 0x80 opcode) ; Group 1: Eb, Ib
+      (let ((lhs (getreg8 epart state)))
+      (let ((rhs (get-byte (bv-add eip 0x02))))
+      (ite (= 0b000 ggg) ; add Eb, Ib
+        (let ((mrr8 (x86-add8 lhs rhs newstate)))
+        (let ((ms (x86-store-res8 mrr8 epart)))
+        (x86-done-insn ms 0x3 opsize addrsize)
+        ))
+      (ite (= 0b001 ggg) ; or  Eb, Ib
+        (let ((mrr8 (x86-or8 lhs rhs newstate)))
+        (let ((ms (x86-store-res8 mrr8 epart)))
+        (x86-done-insn ms 0x3 opsize addrsize)
+        ))
+      (ite (= 0b010 ggg) ; adc Eb, Ib
+        (let ((mrr8 (x86-adc8 lhs rhs newstate)))
+        (let ((ms (x86-store-res8 mrr8 epart)))
+        (x86-done-insn ms 0x3 opsize addrsize)
+        ))
+      (ite (= 0b011 ggg) ; sbb Eb, Ib
+        (let ((mrr8 (x86-sbb8 lhs rhs newstate)))
+        (let ((ms (x86-store-res8 mrr8 epart)))
+        (x86-done-insn ms 0x3 opsize addrsize)
+        ))
+      (ite (= 0b100 ggg) ; and Eb, Ib
+        (let ((mrr8 (x86-and8 lhs rhs newstate)))
+        (let ((ms (x86-store-res8 mrr8 epart)))
+        (x86-done-insn ms 0x3 opsize addrsize)
+        ))
+      (ite (= 0b101 ggg) ; sub Eb, Ib
+        (let ((mrr8 (x86-sub8 lhs rhs newstate)))
+        (let ((ms (x86-store-res8 mrr8 epart)))
+        (x86-done-insn ms 0x3 opsize addrsize)
+        ))
+      (ite (= 0b110 ggg) ; xor Eb, Ib
+        (let ((mrr8 (x86-xor8 lhs rhs newstate)))
+        (let ((ms (x86-store-res8 mrr8 epart)))
+        (x86-done-insn ms 0x3 opsize addrsize)
+        ))
+      ; cmp Eb, Ib
+        (let ((mrr8 (x86-sub8 lhs rhs newstate)))
+        (let ((ms (bv-extract 263 0 mrr8)))
+        (x86-done-insn ms 0x3 opsize addrsize)
+        ))
+      )))))))))
+    (ite (= 0x81 opcode) ; Group 1: Ev, Iz
+      (ite (= 0b1 opsize)
+        (let ((lhs (getreg16 epart state)))
+        (let ((rhs (get-word (bv-add eip 0x02))))
+        (ite (= 0b000 ggg) ; add Eb, Ib
+          (let ((mrr16 (x86-add16 lhs rhs newstate)))
+          (let ((ms (x86-store-res16 mrr16 epart)))
+          (x86-done-insn ms 0x4 opsize addrsize)
+          ))
+        (ite (= 0b001 ggg) ; or  Eb, Ib
+          (let ((mrr16 (x86-or16 lhs rhs newstate)))
+          (let ((ms (x86-store-res16 mrr16 epart)))
+          (x86-done-insn ms 0x4 opsize addrsize)
+          ))
+        (ite (= 0b010 ggg) ; adc Eb, Ib
+          (let ((mrr16 (x86-adc16 lhs rhs newstate)))
+          (let ((ms (x86-store-res16 mrr16 epart)))
+          (x86-done-insn ms 0x4 opsize addrsize)
+          ))
+        (ite (= 0b011 ggg) ; sbb Eb, Ib
+          (let ((mrr16 (x86-sbb16 lhs rhs newstate)))
+          (let ((ms (x86-store-res16 mrr16 epart)))
+          (x86-done-insn ms 0x4 opsize addrsize)
+          ))
+        (ite (= 0b100 ggg) ; and Eb, Ib
+          (let ((mrr16 (x86-and16 lhs rhs newstate)))
+          (let ((ms (x86-store-res16 mrr16 epart)))
+          (x86-done-insn ms 0x4 opsize addrsize)
+          ))
+        (ite (= 0b101 ggg) ; sub Eb, Ib
+          (let ((mrr16 (x86-sub16 lhs rhs newstate)))
+          (let ((ms (x86-store-res16 mrr16 epart)))
+          (x86-done-insn ms 0x4 opsize addrsize)
+          ))
+        (ite (= 0b110 ggg) ; xor Eb, Ib
+          (let ((mrr16 (x86-xor16 lhs rhs newstate)))
+          (let ((ms (x86-store-res16 mrr16 epart)))
+          (x86-done-insn ms 0x4 opsize addrsize)
+          ))
+        ; cmp Eb, Ib
+          (let ((mrr16 (x86-sub16 lhs rhs newstate)))
+          (let ((ms (bv-extract 263 0 mrr16)))
+          (x86-done-insn ms 0x4 opsize addrsize)
+          )))))))))))
+      ; (ite (= 0b0 opsize)
+        (let ((lhs (getreg32 epart state)))
+        (let ((rhs (get-dword (bv-add eip 0x02))))
+        (ite (= 0b000 ggg) ; add Eb, Ib
+          (let ((mrr32 (x86-add32 lhs rhs newstate)))
+          (let ((ms (x86-store-res32 mrr32 epart)))
+          (x86-done-insn ms 0x6 opsize addrsize)
+          ))
+        (ite (= 0b001 ggg) ; or  Eb, Ib
+          (let ((mrr32 (x86-or32 lhs rhs newstate)))
+          (let ((ms (x86-store-res32 mrr32 epart)))
+          (x86-done-insn ms 0x6 opsize addrsize)
+          ))
+        (ite (= 0b010 ggg) ; adc Eb, Ib
+          (let ((mrr32 (x86-adc32 lhs rhs newstate)))
+          (let ((ms (x86-store-res32 mrr32 epart)))
+          (x86-done-insn ms 0x6 opsize addrsize)
+          ))
+        (ite (= 0b011 ggg) ; sbb Eb, Ib
+          (let ((mrr32 (x86-sbb32 lhs rhs newstate)))
+          (let ((ms (x86-store-res32 mrr32 epart)))
+          (x86-done-insn ms 0x6 opsize addrsize)
+          ))
+        (ite (= 0b100 ggg) ; and Eb, Ib
+          (let ((mrr32 (x86-and32 lhs rhs newstate)))
+          (let ((ms (x86-store-res32 mrr32 epart)))
+          (x86-done-insn ms 0x6 opsize addrsize)
+          ))
+        (ite (= 0b101 ggg) ; sub Eb, Ib
+          (let ((mrr32 (x86-sub32 lhs rhs newstate)))
+          (let ((ms (x86-store-res32 mrr32 epart)))
+          (x86-done-insn ms 0x6 opsize addrsize)
+          ))
+        (ite (= 0b110 ggg) ; xor Eb, Ib
+          (let ((mrr32 (x86-xor32 lhs rhs newstate)))
+          (let ((ms (x86-store-res32 mrr32 epart)))
+          (x86-done-insn ms 0x6 opsize addrsize)
+          ))
+        ; cmp Eb, Ib
+          (let ((mrr32 (x86-sub32 lhs rhs newstate)))
+          (let ((ms (bv-extract 263 0 mrr32)))
+          (x86-done-insn ms 0x6 opsize addrsize)
+          ))
+        ))))))))))
+    (ite (= 0x82 opcode) ; Group 1: Eb, Ib
+      (let ((lhs (getreg8 epart state)))
+      (let ((rhs (get-byte (bv-add eip 0x02))))
+      (ite (= 0b000 ggg) ; add Eb, Ib
+        (let ((mrr8 (x86-add8 lhs rhs newstate)))
+        (let ((ms (x86-store-res8 mrr8 epart)))
+        (x86-done-insn ms 0x3 opsize addrsize)
+        ))
+      (ite (= 0b001 ggg) ; or  Eb, Ib
+        (let ((mrr8 (x86-or8 lhs rhs newstate)))
+        (let ((ms (x86-store-res8 mrr8 epart)))
+        (x86-done-insn ms 0x3 opsize addrsize)
+        ))
+      (ite (= 0b010 ggg) ; adc Eb, Ib
+        (let ((mrr8 (x86-adc8 lhs rhs newstate)))
+        (let ((ms (x86-store-res8 mrr8 epart)))
+        (x86-done-insn ms 0x3 opsize addrsize)
+        ))
+      (ite (= 0b011 ggg) ; sbb Eb, Ib
+        (let ((mrr8 (x86-sbb8 lhs rhs newstate)))
+        (let ((ms (x86-store-res8 mrr8 epart)))
+        (x86-done-insn ms 0x3 opsize addrsize)
+        ))
+      (ite (= 0b100 ggg) ; and Eb, Ib
+        (let ((mrr8 (x86-and8 lhs rhs newstate)))
+        (let ((ms (x86-store-res8 mrr8 epart)))
+        (x86-done-insn ms 0x3 opsize addrsize)
+        ))
+      (ite (= 0b101 ggg) ; sub Eb, Ib
+        (let ((mrr8 (x86-sub8 lhs rhs newstate)))
+        (let ((ms (x86-store-res8 mrr8 epart)))
+        (x86-done-insn ms 0x3 opsize addrsize)
+        ))
+      (ite (= 0b110 ggg) ; xor Eb, Ib
+        (let ((mrr8 (x86-xor8 lhs rhs newstate)))
+        (let ((ms (x86-store-res8 mrr8 epart)))
+        (x86-done-insn ms 0x3 opsize addrsize)
+        ))
+      ; cmp Eb, Ib
+        (let ((mrr8 (x86-sub8 lhs rhs newstate)))
+        (let ((ms (bv-extract 263 0 mrr8)))
+        (x86-done-insn ms 0x3 opsize addrsize)
+        ))
+      )))))))))
+    (ite (= 0x83 opcode) ; Group 1: Ev, Ibv
+      (ite (= 0b1 opsize)
+        (let ((lhs (getreg16 epart state)))
+        (let ((rhs (bv-sign-extend (get-byte (bv-add eip 0x02)) 8)))
+        (ite (= 0b000 ggg) ; add Eb, Ib
+          (let ((mrr16 (x86-add16 lhs rhs newstate)))
+          (let ((ms (x86-store-res16 mrr16 epart)))
+          (x86-done-insn ms 0x3 opsize addrsize)
+          ))
+        (ite (= 0b001 ggg) ; or  Eb, Ib
+          (let ((mrr16 (x86-or16 lhs rhs newstate)))
+          (let ((ms (x86-store-res16 mrr16 epart)))
+          (x86-done-insn ms 0x3 opsize addrsize)
+          ))
+        (ite (= 0b010 ggg) ; adc Eb, Ib
+          (let ((mrr16 (x86-adc16 lhs rhs newstate)))
+          (let ((ms (x86-store-res16 mrr16 epart)))
+          (x86-done-insn ms 0x3 opsize addrsize)
+          ))
+        (ite (= 0b011 ggg) ; sbb Eb, Ib
+          (let ((mrr16 (x86-sbb16 lhs rhs newstate)))
+          (let ((ms (x86-store-res16 mrr16 epart)))
+          (x86-done-insn ms 0x3 opsize addrsize)
+          ))
+        (ite (= 0b100 ggg) ; and Eb, Ib
+          (let ((mrr16 (x86-and16 lhs rhs newstate)))
+          (let ((ms (x86-store-res16 mrr16 epart)))
+          (x86-done-insn ms 0x3 opsize addrsize)
+          ))
+        (ite (= 0b101 ggg) ; sub Eb, Ib
+          (let ((mrr16 (x86-sub16 lhs rhs newstate)))
+          (let ((ms (x86-store-res16 mrr16 epart)))
+          (x86-done-insn ms 0x3 opsize addrsize)
+          ))
+        (ite (= 0b110 ggg) ; xor Eb, Ib
+          (let ((mrr16 (x86-xor16 lhs rhs newstate)))
+          (let ((ms (x86-store-res16 mrr16 epart)))
+          (x86-done-insn ms 0x3 opsize addrsize)
+          ))
+        ; cmp Eb, Ib
+          (let ((mrr16 (x86-sub16 lhs rhs newstate)))
+          (let ((ms (bv-extract 263 0 mrr16)))
+          (x86-done-insn ms 0x3 opsize addrsize)
+          )))))))))))
+      ; (ite (= 0b0 opsize)
+        (let ((lhs (getreg32 epart state)))
+        (let ((rhs (bv-sign-extend (get-byte (bv-add eip 0x02)) 24)))
+        (ite (= 0b000 ggg) ; add Eb, Ib
+          (let ((mrr32 (x86-add32 lhs rhs newstate)))
+          (let ((ms (x86-store-res32 mrr32 epart)))
+          (x86-done-insn ms 0x3 opsize addrsize)
+          ))
+        (ite (= 0b001 ggg) ; or  Eb, Ib
+          (let ((mrr32 (x86-or32 lhs rhs newstate)))
+          (let ((ms (x86-store-res32 mrr32 epart)))
+          (x86-done-insn ms 0x3 opsize addrsize)
+          ))
+        (ite (= 0b010 ggg) ; adc Eb, Ib
+          (let ((mrr32 (x86-adc32 lhs rhs newstate)))
+          (let ((ms (x86-store-res32 mrr32 epart)))
+          (x86-done-insn ms 0x3 opsize addrsize)
+          ))
+        (ite (= 0b011 ggg) ; sbb Eb, Ib
+          (let ((mrr32 (x86-sbb32 lhs rhs newstate)))
+          (let ((ms (x86-store-res32 mrr32 epart)))
+          (x86-done-insn ms 0x3 opsize addrsize)
+          ))
+        (ite (= 0b100 ggg) ; and Eb, Ib
+          (let ((mrr32 (x86-and32 lhs rhs newstate)))
+          (let ((ms (x86-store-res32 mrr32 epart)))
+          (x86-done-insn ms 0x3 opsize addrsize)
+          ))
+        (ite (= 0b101 ggg) ; sub Eb, Ib
+          (let ((mrr32 (x86-sub32 lhs rhs newstate)))
+          (let ((ms (x86-store-res32 mrr32 epart)))
+          (x86-done-insn ms 0x3 opsize addrsize)
+          ))
+        (ite (= 0b110 ggg) ; xor Eb, Ib
+          (let ((mrr32 (x86-xor32 lhs rhs newstate)))
+          (let ((ms (x86-store-res32 mrr32 epart)))
+          (x86-done-insn ms 0x3 opsize addrsize)
+          ))
+        ; cmp Eb, Ib
+          (let ((mrr32 (x86-sub32 lhs rhs newstate)))
+          (let ((ms (bv-extract 263 0 mrr32)))
+          (x86-done-insn ms 0x3 opsize addrsize)
+          ))
+        ))))))))))
+    (ite (= 0x84 opcode) ; test Eb, Gb
+      (let ((lhs (getreg8 epart state)))
+      (let ((rhs (getreg8 ggg state)))
+      (let ((mrr8 (x86-and8 lhs rhs newstate)))
+      (let ((ms (bv-extract 263 0 mrr8)))
+      (x86-done-insn ms 0x2 opsize addrsize)
+      ))))
+    (ite (= 0x85 opcode) ; test Ev, Gv
+      (ite (= 0b1 opsize)
+        (let ((lhs (getreg16 epart state)))
+        (let ((rhs (getreg16 ggg state)))
+        (let ((mrr16 (x86-and16 lhs rhs newstate)))
+        (let ((ms (bv-extract 263 0 mrr16)))
+        (x86-done-insn ms 0x2 opsize addrsize)
+        ))))
+      ; (ite (= 0b0 opsize)
+        (let ((lhs (getreg32 epart state)))
+        (let ((rhs (getreg32 ggg state)))
+        (let ((mrr16 (x86-and32 lhs rhs newstate)))
+        (let ((ms (bv-extract 263 0 mrr16)))
+        (x86-done-insn ms 0x2 opsize addrsize)
+        )))))
+
+    (ite (= 0x86 opcode) ; xchg Eb, Gb
+      (let ((lhs (getreg8 epart state)))
+      (let ((rhs (getreg8 ggg state)))
+      (let ((s1  (putreg8 ggg lhs newstate)))
+      (let ((s2  (putreg8 epart rhs s1)))
+      (x86-done-insn s2 0x2 opsize addrsize)
+      ))))
+    (ite (= 0x87 opcode) ; xchg Ev, Gv
+      (ite (= 0b1 opsize)
+        (let ((lhs (getreg16 epart state)))
+        (let ((rhs (getreg16 ggg state)))
+        (let ((s1  (putreg16 ggg lhs newstate)))
+        (let ((s2  (putreg16 epart rhs s1)))
+        (x86-done-insn s2 0x2 opsize addrsize)
+        ))))
+      ; (ite (= 0b0 opsize)
+        (let ((lhs (getreg32 epart state)))
+        (let ((rhs (getreg32 ggg state)))
+        (let ((s1  (putreg32 ggg lhs newstate)))
+        (let ((s2  (putreg32 epart rhs s1)))
+        (x86-done-insn s2 0x2 opsize addrsize)
+        )))))
+    (ite (= 0x88 opcode) ; mov Eb, Gb
+      (let ((rhs (getreg8 ggg state)))
+      (let ((s2  (putreg8 epart rhs newstate)))
+      (x86-done-insn s2 0x2 opsize addrsize)
+      ))
+    (ite (= 0x89 opcode) ; mov Ev, Gv
+      (ite (= 0b1 opsize)
+        (let ((rhs (getreg16 ggg state)))
+        (let ((s2  (putreg16 epart rhs newstate)))
+        (x86-done-insn s2 0x2 opsize addrsize)
+        ))
+      ; (ite (= 0b0 opsize)
+        (let ((rhs (getreg32 ggg state)))
+        (let ((s2  (putreg32 epart rhs newstate)))
+        (x86-done-insn s2 0x2 opsize addrsize)
+        )))
+    (ite (= 0x8A opcode) ; mov Gb, Eb
+      (let ((rhs (getreg8 epart state)))
+      (let ((s2  (putreg8 ggg rhs newstate)))
+      (x86-done-insn s2 0x2 opsize addrsize)
+      ))
+    (ite (= 0x8B opcode) ; mov Gv, Ev
+      (ite (= 0b1 opsize)
+        (let ((rhs (getreg16 epart state)))
+        (let ((s2  (putreg16 ggg rhs newstate)))
+        (x86-done-insn s2 0x2 opsize addrsize)
+        ))
+      ; (ite (= 0b0 opsize)
+        (let ((rhs (getreg32 epart state)))
+        (let ((s2  (putreg32 ggg rhs newstate)))
+        (x86-done-insn s2 0x2 opsize addrsize)
+        )))
+    (ite (= 0x8C opcode) ; mov Ev, Sw
+      (x86-badstate state)
+    (ite (= 0x8D opcode) ; lea Gv, M
+      (x86-badstate state)
+    (ite (= 0x8E opcode) ; mov Sw, Ew
+      (x86-badstate state)
+    ; (ite (= 0x8F opcode) ; pop Ev
+      (x86-badstate state)
+    ))))))))))))))))))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-singlebyte-0x9F-0x90::(-> Byte MachineState Bit Bit DecodedMachineState)
+  (lambda (eip::Byte state::MachineState opsize::Bit addrsize::Bit)
+    (let ((opcode (get-byte eip)))
+    (let ((rhsidx (bv-extract 2 0 opcode)))
+    (let ((lhsidx EaxIdx))
+    (ite (= 0b10010 (bv-extract 7 3 opcode)) ; nop
+                                             ; xchg rAX, rDXr10
+                                             ; xchg rAX, rBXr11
+                                             ; xchg rAX, rSPr12
+                                             ; xchg rAX, rBPr13
+                                             ; xchg rAX, rSIr14
+                                             ; xchg rAX, rDIr15
+      (ite (= 0b1 opsize) 
+        (let ((lhs (getreg16 lhsidx state)))
+        (let ((rhs (getreg16 rhsidx state)))
+        (let ((s1  (putreg16 lhsidx rhs state)))
+        (let ((s2  (putreg16 rhsidx lhs s1)))
+        (x86-done-insn s2 0x1 opsize addrsize)))))
+        (let ((lhs (getreg32 lhsidx state)))
+        (let ((rhs (getreg32 rhsidx state)))
+        (let ((s1  (putreg32 lhsidx rhs state)))
+        (let ((s2  (putreg32 rhsidx lhs s1)))
+        (x86-done-insn s2 0x1 opsize addrsize))))))
+    (ite (= 0x98 opcode) ; cbw/cwde
+      (ite (= 0b1 opsize)
+        (x86-done-insn (putreg16 AxIdx  (bv-sign-extend (getreg8  ALIdx state) 8)  state) 0x1 opsize addrsize)
+        (x86-done-insn (putreg32 EaxIdx (bv-sign-extend (getreg16 AxIdx state) 16) state) 0x1 opsize addrsize))
+    (ite (= 0x99 opcode) ; cwd/cdq
+      (ite (= 0b1 opsize)
+        (let ((extended (bv-sign-extend (getreg16 AxIdx state) 16)))
+        (x86-done-insn (putreg16 DxIdx (bv-extract 31 16 extended) state) 0x1 opsize addrsize))
+        (let ((extended (bv-sign-extend (getreg32 EaxIdx state) 32)))
+        (x86-done-insn (putreg32 EdxIdx (bv-extract 63 32 extended) state) 0x1 opsize addrsize)))
+    (ite (= 0x9A opcode) ; call Ap
+      (x86-badstate state)
+    (ite (= 0x9B opcode) ; wait
+      (x86-done-insn state 0x1 opsize addrsize)
+    (ite (= 0x9C opcode) ; pushfw/pushfd
+      (x86-badstate state)
+    (ite (= 0x9D opcode) ; popfw/popfd
+      (x86-badstate state)
+    (ite (= 0x9E opcode) ; sahf
+      (x86-badstate state)
+    ; (ite (= 0x9F opcode) ; lahf
+      (x86-badstate state)
+    )))))))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-singlebyte-0xAF-0xA0::(-> Byte MachineState Bit Bit DecodedMachineState)
+  (lambda (eip::Byte state::MachineState opsize::Bit addrsize::Bit)
+    (let ((opcode (get-byte eip)))
+    (let ((eip0 (bv-add eip 0x01)))   
+    (ite (= 0xA0 opcode) ; mov AL, Ob
+      (x86-badstate state)
+    (ite (= 0xA1 opcode) ; mov rAX, Ov
+      (x86-badstate state)
+    (ite (= 0xA2 opcode) ; mov Ob, AL
+      (x86-badstate state)
+    (ite (= 0xA3 opcode) ; mov Ov, rAX
+      (x86-badstate state)
+    (ite (= 0xA4 opcode) ; movsb
+      (x86-badstate state)
+    (ite (= 0xA5 opcode) ; movsw/movsd
+      (x86-badstate state)
+    (ite (= 0xA6 opcode) ; cmpsb
+      (x86-badstate state)
+    (ite (= 0xA7 opcode) ; cmpsw/cmpsd
+      (x86-badstate state)
+    (ite (= 0xA8 opcode) ; test AL, Ib
+      (let ((lhs (getreg8 ALIdx state)))
+      (let ((rhs (get-byte eip0)))
+      (let ((mrr8 (x86-and8 lhs rhs state)))
+      (let ((ms (bv-extract 263 0 mrr8)))
+      (x86-done-insn ms 0x2 opsize addrsize)
+      ))))
+    (ite (= 0xA9 opcode) ; test rAX, Iz
+      (ite (= 0b1 opsize)
+        (let ((lhs (getreg16 AxIdx state)))
+        (let ((rhs (get-word eip0)))
+        (let ((mrr16 (x86-and16 lhs rhs state)))
+        (let ((ms (bv-extract 263 0 mrr16)))
+        (x86-done-insn ms 0x3 opsize addrsize)
+        ))))
+      ; (ite (= 0b1 opsize)
+        (let ((lhs (getreg32 AxIdx state)))
+        (let ((rhs (get-dword eip0)))
+        (let ((mrr32 (x86-and32 lhs rhs state)))
+        (let ((ms (bv-extract 263 0 mrr32)))
+        (x86-done-insn ms 0x5 opsize addrsize)
+        )))))
+    (ite (= 0xAA opcode) ; stosb
+      (x86-badstate state)
+    (ite (= 0xAB opcode) ; stosw/stosd
+      (x86-badstate state)
+    (ite (= 0xAC opcode) ; lodsb
+      (x86-badstate state)
+    (ite (= 0xAD opcode) ; lodsw/lodsd
+      (x86-badstate state)
+    (ite (= 0xAE opcode) ; scasb
+      (x86-badstate state)
+    ; (ite (= 0xAF opcode) ; scasw/scasd
+      (x86-badstate state)
+    )))))))))))))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-singlebyte-0xBF-0xB0::(-> Byte MachineState Bit Bit DecodedMachineState)
+  (lambda (eip::Byte state::MachineState opsize::Bit addrsize::Bit)
+    (let ((opcode (get-byte eip)))
+    (let ((eip0 (bv-add eip 0x01)))   
+    (let ((lhsidx (bv-extract 2 0 opcode)))
+    (let ((isupper (bv-extract 3 3 opcode)))
+    (ite (= 0b0 isupper) ; mov ALR8L, Ib 
+                         ; mov CLR9L, Ib 
+                         ; mov DLR10L, Ib
+                         ; mov BLR11L, Ib
+                         ; mov AHR12L, Ib
+                         ; mov CHR13L, Ib
+                         ; mov DHR14L, Ib
+                         ; mov BHR15L, Ib
+      (let ((rhs (get-byte eip0)))
+      (x86-done-insn (putreg8 lhsidx rhs state) 0x2 opsize addrsize))
+    (ite (= 0b1 opsize) ; mov rAXr8, Iv 
+                        ; mov rCXr9, Iv 
+                        ; mov rDXr10, Iv
+                        ; mov rBXr11, Iv
+                        ; mov rSPr12, Iv
+                        ; mov rBPr13, Iv
+                        ; mov rSIr14, Iv
+                        ; mov rDIr15, Iv
+      (let ((rhs (get-word eip0)))
+      (x86-done-insn (putreg16 lhsidx rhs state) 0x3 opsize addrsize))
+    ; (ite (= 0b0 opsize)
+      (let ((rhs (get-dword eip0)))
+      (x86-done-insn (putreg32 lhsidx rhs state) 0x5 opsize addrsize))))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-singlebyte-0xCF-0xC0::(-> Byte MachineState Bit Bit DecodedMachineState)
+  (lambda (eip::Byte state::MachineState opsize::Bit addrsize::Bit)
+    (let ((opcode (get-byte eip)))
+    (let ((eip0 (bv-add eip 0x01)))   
+    (let ((modrm (get-byte eip0)))
+    (let ((ggg   (bv-extract 5 3 modrm)))
+    (let ((epart (bv-extract 2 0 modrm)))
+    (let ((extra (bool-to-bit (= (bv-extract 7 6 modrm) 0b11))))
+    (let ((newstate (putextra extra state)))
+    (ite (= 0xC0 opcode) ; Shift/Rotate Group Eb Ib
+      (let ((lhs (getreg8 epart state)))
+      (let ((rhs (get-byte (bv-add eip0 0x01))))
+      (ite (= 0b000 ggg) ; rol Eb, Ib
+        (let ((mrr8 (x86-rol8 lhs rhs newstate)))
+        (let ((ms (x86-store-res8 mrr8 epart)))
+        (x86-done-insn ms 0x3 opsize addrsize)
+        ))
+      (ite (= 0b001 ggg) ; ror Eb, Ib
+        (let ((mrr8 (x86-ror8 lhs rhs newstate)))
+        (let ((ms (x86-store-res8 mrr8 epart)))
+        (x86-done-insn ms 0x3 opsize addrsize)
+        ))
+      (ite (= 0b010 ggg) ; rcl Eb, Ib
+        (let ((mrr8 (x86-rcl8 lhs rhs newstate)))
+        (let ((ms (x86-store-res8 mrr8 epart)))
+        (x86-done-insn ms 0x3 opsize addrsize)
+        ))
+      (ite (= 0b011 ggg) ; rcr Eb, Ib
+        (let ((mrr8 (x86-rcr8 lhs rhs newstate)))
+        (let ((ms (x86-store-res8 mrr8 epart)))
+        (x86-done-insn ms 0x3 opsize addrsize)
+        ))
+      (ite (= 0b100 ggg) ; shl Eb, Ib
+        (let ((mrr8 (x86-shl8 lhs rhs newstate)))
+        (let ((ms (x86-store-res8 mrr8 epart)))
+        (x86-done-insn ms 0x3 opsize addrsize)
+        ))
+      (ite (= 0b101 ggg) ; shr Eb, Ib
+        (let ((mrr8 (x86-shr8 lhs rhs newstate)))
+        (let ((ms (x86-store-res8 mrr8 epart)))
+        (x86-done-insn ms 0x3 opsize addrsize)
+        ))
+      (ite (= 0b110 ggg) ; sal Eb, Ib
+        (let ((mrr8 (x86-shl8 lhs rhs newstate)))
+        (let ((ms (x86-store-res8 mrr8 epart)))
+        (x86-done-insn ms 0x3 opsize addrsize)
+        ))
+      ; sar Eb, Ib
+        (let ((mrr8 (x86-sar8 lhs rhs newstate)))
+        (let ((ms (x86-store-res8 mrr8 epart)))
+        (x86-done-insn ms 0x3 opsize addrsize)
+        ))
+      )))))))))
+    (ite (= 0xC1 opcode)
+      (let ((rhs (get-byte (bv-add eip 0x02))))
+      (ite (= 0b1 opsize)
+        (let ((lhs (getreg16 epart state)))
+        (ite (= 0b000 ggg) ; rol Eb, Ib
+          (let ((mrr16 (x86-rol16 lhs rhs newstate)))
+          (let ((ms (x86-store-res16 mrr16 epart)))
+          (x86-done-insn ms 0x3 opsize addrsize)
+          ))
+        (ite (= 0b001 ggg) ; ror Eb, Ib
+          (let ((mrr16 (x86-ror16 lhs rhs newstate)))
+          (let ((ms (x86-store-res16 mrr16 epart)))
+          (x86-done-insn ms 0x3 opsize addrsize)
+          ))
+        (ite (= 0b010 ggg) ; rcl Eb, Ib
+          (let ((mrr16 (x86-rcl16 lhs rhs newstate)))
+          (let ((ms (x86-store-res16 mrr16 epart)))
+          (x86-done-insn ms 0x3 opsize addrsize)
+          ))
+        (ite (= 0b011 ggg) ; rcr Eb, Ib
+          (let ((mrr16 (x86-rcr16 lhs rhs newstate)))
+          (let ((ms (x86-store-res16 mrr16 epart)))
+          (x86-done-insn ms 0x3 opsize addrsize)
+          ))
+        (ite (= 0b100 ggg) ; shl Eb, Ib
+          (let ((mrr16 (x86-shl16 lhs rhs newstate)))
+          (let ((ms (x86-store-res16 mrr16 epart)))
+          (x86-done-insn ms 0x3 opsize addrsize)
+          ))
+        (ite (= 0b101 ggg) ; shr Eb, Ib
+          (let ((mrr16 (x86-shr16 lhs rhs newstate)))
+          (let ((ms (x86-store-res16 mrr16 epart)))
+          (x86-done-insn ms 0x3 opsize addrsize)
+          ))
+        (ite (= 0b110 ggg) ; sal Eb, Ib
+          (let ((mrr16 (x86-shl16 lhs rhs newstate)))
+          (let ((ms (x86-store-res16 mrr16 epart)))
+          (x86-done-insn ms 0x3 opsize addrsize)
+          ))
+        ; sar Eb, Ib
+          (let ((mrr16 (x86-sar16 lhs rhs newstate)))
+          (let ((ms (x86-store-res16 mrr16 epart)))
+          (x86-done-insn ms 0x3 opsize addrsize)
+          ))))))))))
+      ; (ite (= 0b1 opsize)
+        (let ((lhs (getreg32 epart state)))
+        (ite (= 0b000 ggg) ; rol Eb, Ib
+          (let ((mrr32 (x86-rol32 lhs rhs newstate)))
+          (let ((ms (x86-store-res32 mrr32 epart)))
+          (x86-done-insn ms 0x3 opsize addrsize)
+          ))
+        (ite (= 0b001 ggg) ; ror Eb, Ib
+          (let ((mrr32 (x86-ror32 lhs rhs newstate)))
+          (let ((ms (x86-store-res32 mrr32 epart)))
+          (x86-done-insn ms 0x3 opsize addrsize)
+          ))
+        (ite (= 0b010 ggg) ; rcl Eb, Ib
+          (let ((mrr32 (x86-rcl32 lhs rhs newstate)))
+          (let ((ms (x86-store-res32 mrr32 epart)))
+          (x86-done-insn ms 0x3 opsize addrsize)
+          ))
+        (ite (= 0b011 ggg) ; rcr Eb, Ib
+          (let ((mrr32 (x86-rcr32 lhs rhs newstate)))
+          (let ((ms (x86-store-res32 mrr32 epart)))
+          (x86-done-insn ms 0x3 opsize addrsize)
+          ))
+        (ite (= 0b100 ggg) ; shl Eb, Ib
+          (let ((mrr32 (x86-shl32 lhs rhs newstate)))
+          (let ((ms (x86-store-res32 mrr32 epart)))
+          (x86-done-insn ms 0x3 opsize addrsize)
+          ))
+        (ite (= 0b101 ggg) ; shr Eb, Ib
+          (let ((mrr32 (x86-shr32 lhs rhs newstate)))
+          (let ((ms (x86-store-res32 mrr32 epart)))
+          (x86-done-insn ms 0x3 opsize addrsize)
+          ))
+        (ite (= 0b110 ggg) ; sal Eb, Ib
+          (let ((mrr32 (x86-shl32 lhs rhs newstate)))
+          (let ((ms (x86-store-res32 mrr32 epart)))
+          (x86-done-insn ms 0x3 opsize addrsize)
+          ))
+        ; sar Eb, Ib
+          (let ((mrr32 (x86-sar32 lhs rhs newstate)))
+          (let ((ms (x86-store-res32 mrr32 epart)))
+          (x86-done-insn ms 0x3 opsize addrsize)
+          ))))))))))
+       ))
+    (ite (= 0xC2 opcode) ; ret Iw
+      (x86-badstate state)
+    (ite (= 0xC3 opcode) ; ret
+      (x86-badstate state)
+    (ite (= 0xC4 opcode) ; les Gz, Mp
+      (x86-badstate state)
+    (ite (= 0xC5 opcode) ; lds Gz, Mp
+      (x86-badstate state)
+    (ite (= 0xC6 opcode) ; GROUP: mov Eb, Ib for ggg = 0
+      (x86-badstate state)
+    (ite (= 0xC7 opcode) ; GROUP: mov Ev, Iz for ggg = 0
+      (x86-badstate state)
+    (ite (= 0xC8 opcode) ; enter Iw, Ib
+      (x86-badstate state)
+    (ite (= 0xC9 opcode) ; leave
+      (x86-badstate state)
+    (ite (= 0xCA opcode) ; retf Iw
+      (x86-badstate state)
+    (ite (= 0xCB opcode) ; retf
+      (x86-badstate state)
+    (ite (= 0xCC opcode) ; int3
+      (x86-badstate state)
+    (ite (= 0xCD opcode) ; int ib
+      (x86-badstate state)
+    (ite (= 0xCE opcode) ; into
+      (x86-badstate state)
+    ; (ite (= 0xCF opcode) ; iretw/iretd
+      (x86-badstate state)
+    ))))))))))))))))))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-singlebyte-0xDF-0xD0::(-> Byte MachineState Bit Bit DecodedMachineState)
+  (lambda (eip::Byte state::MachineState opsize::Bit addrsize::Bit)
+    (let ((opcode (get-byte eip)))
+    (let ((eip0 (bv-add eip 0x01)))   
+    (let ((modrm (get-byte eip0)))
+    (let ((ggg   (bv-extract 5 3 modrm)))
+    (let ((epart (bv-extract 2 0 modrm)))
+    (let ((extra (bool-to-bit (= (bv-extract 7 6 modrm) 0b11))))
+    (let ((newstate (putextra extra state)))
+    (ite (= 0xD0 opcode) ; Shift/Rotate Group Eb 1
+      (let ((lhs (getreg8 epart state)))
+      (ite (= 0b000 ggg) ; rol Eb, 1
+        (let ((mrr8 (x86-rol8 lhs 0x01 newstate)))
+        (let ((ms (x86-store-res8 mrr8 epart)))
+        (x86-done-insn ms 0x2 opsize addrsize)
+        ))
+      (ite (= 0b001 ggg) ; ror Eb, 1
+        (let ((mrr8 (x86-ror8 lhs 0x01 newstate)))
+        (let ((ms (x86-store-res8 mrr8 epart)))
+        (x86-done-insn ms 0x2 opsize addrsize)
+        ))
+      (ite (= 0b010 ggg) ; rcl Eb, 1
+        (let ((mrr8 (x86-rcl8 lhs 0x01 newstate)))
+        (let ((ms (x86-store-res8 mrr8 epart)))
+        (x86-done-insn ms 0x2 opsize addrsize)
+        ))
+      (ite (= 0b011 ggg) ; rcr Eb, 1
+        (let ((mrr8 (x86-rcr8 lhs 0x01 newstate)))
+        (let ((ms (x86-store-res8 mrr8 epart)))
+        (x86-done-insn ms 0x2 opsize addrsize)
+        ))
+      (ite (= 0b100 ggg) ; shl Eb, 1
+        (let ((mrr8 (x86-shl8 lhs 0x01 newstate)))
+        (let ((ms (x86-store-res8 mrr8 epart)))
+        (x86-done-insn ms 0x2 opsize addrsize)
+        ))
+      (ite (= 0b101 ggg) ; shr Eb, 1
+        (let ((mrr8 (x86-shr8 lhs 0x01 newstate)))
+        (let ((ms (x86-store-res8 mrr8 epart)))
+        (x86-done-insn ms 0x2 opsize addrsize)
+        ))
+      (ite (= 0b110 ggg) ; sal Eb, 1
+        (let ((mrr8 (x86-shl8 lhs 0x01 newstate)))
+        (let ((ms (x86-store-res8 mrr8 epart)))
+        (x86-done-insn ms 0x2 opsize addrsize)
+        ))
+      ; sar Eb, 1
+        (let ((mrr8 (x86-sar8 lhs 0x01 newstate)))
+        (let ((ms (x86-store-res8 mrr8 epart)))
+        (x86-done-insn ms 0x2 opsize addrsize)
+        ))
+      ))))))))
+    (ite (= 0xD1 opcode)
+      (ite (= 0b1 opsize)
+        (let ((lhs (getreg16 epart state)))
+        (ite (= 0b000 ggg) ; rol Ev,  1
+          (let ((mrr16 (x86-rol16 lhs 0x01 newstate)))
+          (let ((ms (x86-store-res16 mrr16 epart)))
+          (x86-done-insn ms 0x2 opsize addrsize)
+          ))
+        (ite (= 0b001 ggg) ; ror Ev,  1
+          (let ((mrr16 (x86-ror16 lhs 0x01 newstate)))
+          (let ((ms (x86-store-res16 mrr16 epart)))
+          (x86-done-insn ms 0x2 opsize addrsize)
+          ))
+        (ite (= 0b010 ggg) ; rcl Ev,  1
+          (let ((mrr16 (x86-rcl16 lhs 0x01 newstate)))
+          (let ((ms (x86-store-res16 mrr16 epart)))
+          (x86-done-insn ms 0x2 opsize addrsize)
+          ))
+        (ite (= 0b011 ggg) ; rcr Ev,  1
+          (let ((mrr16 (x86-rcr16 lhs 0x01 newstate)))
+          (let ((ms (x86-store-res16 mrr16 epart)))
+          (x86-done-insn ms 0x2 opsize addrsize)
+          ))
+        (ite (= 0b100 ggg) ; shl Ev,  1
+          (let ((mrr16 (x86-shl16 lhs 0x01 newstate)))
+          (let ((ms (x86-store-res16 mrr16 epart)))
+          (x86-done-insn ms 0x2 opsize addrsize)
+          ))
+        (ite (= 0b101 ggg) ; shr Ev,  1
+          (let ((mrr16 (x86-shr16 lhs 0x01 newstate)))
+          (let ((ms (x86-store-res16 mrr16 epart)))
+          (x86-done-insn ms 0x2 opsize addrsize)
+          ))
+        (ite (= 0b110 ggg) ; sal Ev,  1
+          (let ((mrr16 (x86-shl16 lhs 0x01 newstate)))
+          (let ((ms (x86-store-res16 mrr16 epart)))
+          (x86-done-insn ms 0x2 opsize addrsize)
+          ))
+        ; sar Ev,  1
+          (let ((mrr16 (x86-sar16 lhs 0x01 newstate)))
+          (let ((ms (x86-store-res16 mrr16 epart)))
+          (x86-done-insn ms 0x2 opsize addrsize)
+          ))))))))))
+      ; (ite (= 0b1 opsize)
+        (let ((lhs (getreg32 epart state)))
+        (ite (= 0b000 ggg) ; rol Ev,  1
+          (let ((mrr32 (x86-rol32 lhs 0x01 newstate)))
+          (let ((ms (x86-store-res32 mrr32 epart)))
+          (x86-done-insn ms 0x2 opsize addrsize)
+          ))
+        (ite (= 0b001 ggg) ; ror Ev,  1
+          (let ((mrr32 (x86-ror32 lhs 0x01 newstate)))
+          (let ((ms (x86-store-res32 mrr32 epart)))
+          (x86-done-insn ms 0x2 opsize addrsize)
+          ))
+        (ite (= 0b010 ggg) ; rcl Ev,  1
+          (let ((mrr32 (x86-rcl32 lhs 0x01 newstate)))
+          (let ((ms (x86-store-res32 mrr32 epart)))
+          (x86-done-insn ms 0x2 opsize addrsize)
+          ))
+        (ite (= 0b011 ggg) ; rcr Ev,  1
+          (let ((mrr32 (x86-rcr32 lhs 0x01 newstate)))
+          (let ((ms (x86-store-res32 mrr32 epart)))
+          (x86-done-insn ms 0x2 opsize addrsize)
+          ))
+        (ite (= 0b100 ggg) ; shl Ev,  1
+          (let ((mrr32 (x86-shl32 lhs 0x01 newstate)))
+          (let ((ms (x86-store-res32 mrr32 epart)))
+          (x86-done-insn ms 0x2 opsize addrsize)
+          ))
+        (ite (= 0b101 ggg) ; shr Ev,  1
+          (let ((mrr32 (x86-shr32 lhs 0x01 newstate)))
+          (let ((ms (x86-store-res32 mrr32 epart)))
+          (x86-done-insn ms 0x2 opsize addrsize)
+          ))
+        (ite (= 0b110 ggg) ; sal Ev,  1
+          (let ((mrr32 (x86-shl32 lhs 0x01 newstate)))
+          (let ((ms (x86-store-res32 mrr32 epart)))
+          (x86-done-insn ms 0x2 opsize addrsize)
+          ))
+        ; sar Ev,  1
+          (let ((mrr32 (x86-sar32 lhs 0x01 newstate)))
+          (let ((ms (x86-store-res32 mrr32 epart)))
+          (x86-done-insn ms 0x2 opsize addrsize)
+          ))))))))))
+       )
+    (ite (= 0xD2 opcode) ; Shift/Rotate Group Eb Ib
+      (let ((lhs (getreg8 epart state)))
+      (ite (= 0b000 ggg) ; rol Eb, CL
+        (let ((mrr8 (x86-rol8 lhs (getreg8 CLIdx newstate) newstate)))
+        (let ((ms (x86-store-res8 mrr8 epart)))
+        (x86-done-insn ms 0x2 opsize addrsize)
+        ))
+      (ite (= 0b001 ggg) ; ror Eb, CL
+        (let ((mrr8 (x86-ror8 lhs (getreg8 CLIdx newstate) newstate)))
+        (let ((ms (x86-store-res8 mrr8 epart)))
+        (x86-done-insn ms 0x2 opsize addrsize)
+        ))
+      (ite (= 0b010 ggg) ; rcl Eb, CL
+        (let ((mrr8 (x86-rcl8 lhs (getreg8 CLIdx newstate) newstate)))
+        (let ((ms (x86-store-res8 mrr8 epart)))
+        (x86-done-insn ms 0x2 opsize addrsize)
+        ))
+      (ite (= 0b011 ggg) ; rcr Eb, CL
+        (let ((mrr8 (x86-rcr8 lhs (getreg8 CLIdx newstate) newstate)))
+        (let ((ms (x86-store-res8 mrr8 epart)))
+        (x86-done-insn ms 0x2 opsize addrsize)
+        ))
+      (ite (= 0b100 ggg) ; shl Eb, CL
+        (let ((mrr8 (x86-shl8 lhs (getreg8 CLIdx newstate) newstate)))
+        (let ((ms (x86-store-res8 mrr8 epart)))
+        (x86-done-insn ms 0x2 opsize addrsize)
+        ))
+      (ite (= 0b101 ggg) ; shr Eb, CL
+        (let ((mrr8 (x86-shr8 lhs (getreg8 CLIdx newstate) newstate)))
+        (let ((ms (x86-store-res8 mrr8 epart)))
+        (x86-done-insn ms 0x2 opsize addrsize)
+        ))
+      (ite (= 0b110 ggg) ; sal Eb, CL
+        (let ((mrr8 (x86-shl8 lhs (getreg8 CLIdx newstate) newstate)))
+        (let ((ms (x86-store-res8 mrr8 epart)))
+        (x86-done-insn ms 0x2 opsize addrsize)
+        ))
+      ; sar Eb, CL
+        (let ((mrr8 (x86-sar8 lhs (getreg8 CLIdx newstate) newstate)))
+        (let ((ms (x86-store-res8 mrr8 epart)))
+        (x86-done-insn ms 0x2 opsize addrsize)
+        ))
+      ))))))))
+    (ite (= 0xD3 opcode)
+      (ite (= 0b1 opsize)
+        (let ((lhs (getreg16 epart state)))
+        (ite (= 0b000 ggg) ; rol Eb, CL
+          (let ((mrr16 (x86-rol16 lhs (getreg8 CLIdx newstate) newstate)))
+          (let ((ms (x86-store-res16 mrr16 epart)))
+          (x86-done-insn ms 0x2 opsize addrsize)
+          ))
+        (ite (= 0b001 ggg) ; ror Eb, CL
+          (let ((mrr16 (x86-ror16 lhs (getreg8 CLIdx newstate) newstate)))
+          (let ((ms (x86-store-res16 mrr16 epart)))
+          (x86-done-insn ms 0x2 opsize addrsize)
+          ))
+        (ite (= 0b010 ggg) ; rcl Eb, CL
+          (let ((mrr16 (x86-rcl16 lhs (getreg8 CLIdx newstate) newstate)))
+          (let ((ms (x86-store-res16 mrr16 epart)))
+          (x86-done-insn ms 0x2 opsize addrsize)
+          ))
+        (ite (= 0b011 ggg) ; rcr Eb, CL
+          (let ((mrr16 (x86-rcr16 lhs (getreg8 CLIdx newstate) newstate)))
+          (let ((ms (x86-store-res16 mrr16 epart)))
+          (x86-done-insn ms 0x2 opsize addrsize)
+          ))
+        (ite (= 0b100 ggg) ; shl Eb, CL
+          (let ((mrr16 (x86-shl16 lhs (getreg8 CLIdx newstate) newstate)))
+          (let ((ms (x86-store-res16 mrr16 epart)))
+          (x86-done-insn ms 0x2 opsize addrsize)
+          ))
+        (ite (= 0b101 ggg) ; shr Eb, CL
+          (let ((mrr16 (x86-shr16 lhs (getreg8 CLIdx newstate) newstate)))
+          (let ((ms (x86-store-res16 mrr16 epart)))
+          (x86-done-insn ms 0x2 opsize addrsize)
+          ))
+        (ite (= 0b110 ggg) ; sal Eb, CL
+          (let ((mrr16 (x86-shl16 lhs (getreg8 CLIdx newstate) newstate)))
+          (let ((ms (x86-store-res16 mrr16 epart)))
+          (x86-done-insn ms 0x2 opsize addrsize)
+          ))
+        ; sar Eb, CL
+          (let ((mrr16 (x86-sar16 lhs (getreg8 CLIdx newstate) newstate)))
+          (let ((ms (x86-store-res16 mrr16 epart)))
+          (x86-done-insn ms 0x2 opsize addrsize)
+          ))))))))))
+      ; (ite (= 0b1 opsize)
+        (let ((lhs (getreg32 epart state)))
+        (ite (= 0b000 ggg) ; rol Eb, CL
+          (let ((mrr32 (x86-rol32 lhs (getreg8 CLIdx newstate) newstate)))
+          (let ((ms (x86-store-res32 mrr32 epart)))
+          (x86-done-insn ms 0x2 opsize addrsize)
+          ))
+        (ite (= 0b001 ggg) ; ror Eb, CL
+          (let ((mrr32 (x86-ror32 lhs (getreg8 CLIdx newstate) newstate)))
+          (let ((ms (x86-store-res32 mrr32 epart)))
+          (x86-done-insn ms 0x2 opsize addrsize)
+          ))
+        (ite (= 0b010 ggg) ; rcl Eb, CL
+          (let ((mrr32 (x86-rcl32 lhs (getreg8 CLIdx newstate) newstate)))
+          (let ((ms (x86-store-res32 mrr32 epart)))
+          (x86-done-insn ms 0x2 opsize addrsize)
+          ))
+        (ite (= 0b011 ggg) ; rcr Eb, CL
+          (let ((mrr32 (x86-rcr32 lhs (getreg8 CLIdx newstate) newstate)))
+          (let ((ms (x86-store-res32 mrr32 epart)))
+          (x86-done-insn ms 0x2 opsize addrsize)
+          ))
+        (ite (= 0b100 ggg) ; shl Eb, CL
+          (let ((mrr32 (x86-shl32 lhs (getreg8 CLIdx newstate) newstate)))
+          (let ((ms (x86-store-res32 mrr32 epart)))
+          (x86-done-insn ms 0x2 opsize addrsize)
+          ))
+        (ite (= 0b101 ggg) ; shr Eb, CL
+          (let ((mrr32 (x86-shr32 lhs (getreg8 CLIdx newstate) newstate)))
+          (let ((ms (x86-store-res32 mrr32 epart)))
+          (x86-done-insn ms 0x2 opsize addrsize)
+          ))
+        (ite (= 0b110 ggg) ; sal Eb, CL
+          (let ((mrr32 (x86-shl32 lhs (getreg8 CLIdx newstate) newstate)))
+          (let ((ms (x86-store-res32 mrr32 epart)))
+          (x86-done-insn ms 0x2 opsize addrsize)
+          ))
+        ; sar Eb, CL
+          (let ((mrr32 (x86-sar32 lhs (getreg8 CLIdx newstate) newstate)))
+          (let ((ms (x86-store-res32 mrr32 epart)))
+          (x86-done-insn ms 0x2 opsize addrsize)
+          )))))))))
+       ))
+    (ite (= 0xD4 opcode) ; aam Ib
+      (x86-badstate state)
+    (ite (= 0xD5 opcode) ; aad Ib
+      (x86-badstate state)
+    (ite (= 0xD6 opcode) ; salc
+      (x86-badstate state)
+    (ite (= 0xD7 opcode) ; xlat MbBx / MbEbx
+      (x86-badstate state)
+    (ite (= 0xD8 opcode) ; FPU D8
+      (x86-badstate state)
+    (ite (= 0xD9 opcode) ; FPU D9
+      (x86-badstate state)
+    (ite (= 0xDA opcode) ; FPU DA
+      (x86-badstate state)
+    (ite (= 0xDB opcode) ; FPU DB
+      (x86-badstate state)
+    (ite (= 0xDC opcode) ; FPU DC
+      (x86-badstate state)
+    (ite (= 0xDD opcode) ; FPU DD
+      (x86-badstate state)
+    (ite (= 0xDE opcode) ; FPU DE
+      (x86-badstate state)
+    ; (ite (= 0xDF opcode) ; FPU DF
+      (x86-badstate state)
+    ))))))))))))))))))))))
+  ) ; end lambda
+) ; end define function
+
+(define x86-singlebyte-0xEF-0xE0::(-> Byte MachineState Bit Bit DecodedMachineState)
+  (lambda (eip::Byte state::MachineState opsize::Bit addrsize::Bit)
+    (let ((opcode (get-byte eip)))
+    (ite (= 0xE0 opcode) ; loopnz Jb
+      (x86-badstate state)
+    (ite (= 0xE1 opcode) ; loopz Jb
+      (x86-badstate state)
+    (ite (= 0xE2 opcode) ; loop Jb
+      (x86-badstate state)
+    (ite (= 0xE3 opcode) ; jcxz Jb / jecxz Jb
+      (x86-badstate state)
+    (ite (= 0xE4 opcode) ; in AL, Ib
+      (x86-badstate state)
+    (ite (= 0xE5 opcode) ; in eAX, Ib
+      (x86-badstate state)
+    (ite (= 0xE6 opcode) ; out Ib, AL
+      (x86-badstate state)
+    (ite (= 0xE7 opcode) ; out Ib, eAX
+      (x86-badstate state)
+    (ite (= 0xE8 opcode) ; call Jz
+      (x86-badstate state)
+    (ite (= 0xE9 opcode) ; jmp Jz
+      (x86-badstate state)
+    (ite (= 0xEA opcode) ; jmp far AP
+      (x86-badstate state)
+    (ite (= 0xEB opcode) ; jmp Jb
+      (x86-badstate state)
+    (ite (= 0xEC opcode) ; in AL, DX
+      (x86-badstate state)
+    (ite (= 0xED opcode) ; in eAX, DX
+      (x86-badstate state)
+    (ite (= 0xEE opcode) ; out DX, AL
+      (x86-badstate state)
+    ; (ite (= 0xEF opcode) ; out DX, eAX
+      (x86-badstate state)
+    ))))))))))))))))
+  ) ; end lambda
+) ; end define function
+
+; (define x86-singlebyte-0xFF-0xF0::(-> Byte MachineState Bit Bit DecodedMachineState)
+;   (lambda (eip::Byte state::MachineState opsize::Bit addrsize::Bit)
+;     (let ((opcode (get-byte eip1)))
+;     (ite (= 0xF0 opcode) ; LOCK prefix
+;       (x86-badstate state)
+;     (ite (= 0xF1 opcode) ; icebp
+;       (x86-badstate state)
+;     (ite (= 0xF2 opcode) ; REPNE prefix
+;       (x86-badstate state)
+;     (ite (= 0xF3 opcode) ; REP prefix
+;       (x86-badstate state)
+;     (ite (= 0xF4 opcode) ; hlt
+;       (x86-badstate state)
+;     (ite (= 0xF5 opcode) ; cmc
+;       (                           
+;       )                           
+;     (ite (= 0xF6 opcode) ; GROUP TODO
+;       (                           
+;       )                           
+;     (ite (= 0xF7 opcode) ; GROUP TODO
+;       (                               
+;       )                               
+;     (ite (= 0xF8 opcode) ; clc
+;       (                               
+;       )                               
+;     (ite (= 0xF9 opcode) ; stc
+;       (                               
+;       )                               
+;     (ite (= 0xFA opcode) ; cli
+;       (x86-badstate state)
+;     (ite (= 0xFB opcode) ; sti
+;       (x86-badstate state)
+;     (ite (= 0xFC opcode) ; cld
+;       (                               
+;       )                               
+;     (ite (= 0xFD opcode) ; std
+;       (                               
+;       )                               
+;     (ite (= 0xFE opcode) ; GROUP TODO
+;       (
+;       )
+;     (ite (= 0xFF opcode) ; GROUP TODO
+;       (
+;       )
+;     )))))))))))))))))
+;   ) ; end lambda
+; ) ; end define function
+
+(define x86-singlebyte::(-> Byte MachineState Bit Bit DecodedMachineState)
+  (lambda (eip::Byte state::MachineState opsize::Bit addrsize::Bit)
+    (let ((opcode (bv-extract 7 4 (get-byte eip))))
+    (ite (= opcode 0x0) (x86-singlebyte-0x0F-0x00 eip state opsize addrsize)
+    (ite (= opcode 0x1) (x86-singlebyte-0x1F-0x10 eip state opsize addrsize)
+    (ite (= opcode 0x2) (x86-singlebyte-0x2F-0x20 eip state opsize addrsize)
+    (ite (= opcode 0x3) (x86-singlebyte-0x3F-0x30 eip state opsize addrsize)
+    (ite (= opcode 0x4) (x86-singlebyte-0x4F-0x40 eip state opsize addrsize)
+    (ite (= opcode 0x5) (x86-singlebyte-0x5F-0x50 eip state opsize addrsize)
+    (ite (= opcode 0x6) (x86-singlebyte-0x6F-0x60 eip state opsize addrsize)
+    (ite (= opcode 0x7) (x86-singlebyte-0x7F-0x70 eip state opsize addrsize)
+    (ite (= opcode 0x8) (x86-singlebyte-0x8F-0x80 eip state opsize addrsize)
+    (ite (= opcode 0x9) (x86-singlebyte-0x9F-0x90 eip state opsize addrsize)
+    (ite (= opcode 0xA) (x86-singlebyte-0xAF-0xA0 eip state opsize addrsize)
+    (ite (= opcode 0xB) (x86-singlebyte-0xBF-0xB0 eip state opsize addrsize)
+    (ite (= opcode 0xC) (x86-singlebyte-0xCF-0xC0 eip state opsize addrsize)
+    (ite (= opcode 0xD) (x86-singlebyte-0xDF-0xD0 eip state opsize addrsize)
+    (ite (= opcode 0xE) (x86-singlebyte-0xEF-0xE0 eip state opsize addrsize)
+    ;                     (x86-singlebyte-0xFF-0xF0 eip state opsize addrsize))))))))))))))))
+   (x86-badstate state))))))))))))))))) ; end let
+  ) ; end lambda
+) ; end define
+
+
+
+; symbolic-insn(eip,state). Decode an instruction at eip 'eip'. Perform the
+; operation specified by that instruction. Consult and update the state 'state'
+; accordingly; return the new state concatenated with the length of the 
+; instruction. In other words, this function simulates the effects of executing
+; every possible instruction. 
+(define symbolic-insn::(-> Byte MachineState DecodedMachineState)
+	(lambda (eip::Byte state::MachineState)
+    (let ((has-opsize (consume-opsize-prefix eip)))
+    (let ((eip0 (update-eip eip has-opsize)))
+    (let ((has-addrsize (consume-addrsize-prefix eip0)))
+    (let ((eip1 (update-eip eip0 has-opsize)))
+    (x86-singlebyte eip1 state has-opsize has-addrsize)))))
+  ) ; end lambda
+) ; end define
+; The main assertion.
+
+(assert 
+  ; For every possible input state (r0, ..., r7).
+  ; There is an additional universally-quantified variable idx: used to make 
+  ; statements about the bytes in the encoding.
+  (forall (cf::(bitvector 1) pf::(bitvector 1) af::(bitvector 1) zf::(bitvector 1) sf::(bitvector 1) df::(bitvector 1) of::(bitvector 1) eax::(bitvector 32) ecx::(bitvector 32) edx::(bitvector 32) ebx::(bitvector 32) esp::(bitvector 32) ebp::(bitvector 32) esi::(bitvector 32) edi::(bitvector 32) idx::(bitvector 8))
+    ; ------------------------
+    ; INITIALIZE STATE AND EIP
+    ; ------------------------
+    ; For any extra constraints, like "modrm byte was a register"
+    (let ((extra0 true))
+    
+    ; Create the input "state" by concatenating all of the inputs.
+    (let ((state0   (bv-concat 0b1 of df sf zf af pf cf edi esi ebp esp ebx edx ecx eax)))
+
+    ; FIRST INSTRUCTION
+    ; Set initial EIP to zero.
+    (let ((eip0     0x00))
+    (let ((decstate1 (symbolic-insn eip0 state0)))
+    (let ((len1 (bv-extract 267 264 decstate1)))
+    (let ((state1 (bv-extract 263 0 decstate1)))
+    (let ((extra1 (= 0b1 (getextra state1))))
+    (let ((lenpred1 (/= len1 0x0)))
+
+    ; SECOND INSTRUCTION
+    (let ((eip1 (bv-add (bv-zero-extend len1 4) eip0)))
+    (let ((decstate2 (symbolic-insn eip1 state1)))
+    (let ((len2 (bv-extract 267 264 decstate2)))
+    (let ((state2 (bv-extract 263 0 decstate2)))
+    (let ((extra2 (and extra1 (= 0b1 (getextra state2)))))
+    (let ((lenpred2 (and lenpred1 (/= len2 0x0))))
+    
+    ; THIRD INSTRUCTION
+    (let ((eip2 (bv-add (bv-zero-extend len2 4) eip1)))
+    (let ((decstate3 (symbolic-insn eip2 state2)))
+    (let ((len3 (bv-extract 267 264 decstate3)))
+    (let ((state3 (bv-extract 263 0 decstate3)))
+    (let ((extra3 (and extra2 (= 0b1 (getextra state3)))))
+    (let ((lenpred3 (and lenpred2 (/= len3 0x0))))
+
+    ; FOURTH INSTRUCTION
+    (let ((eip3 (bv-add (bv-zero-extend len3 4) eip2)))
+    (let ((decstate4 (symbolic-insn eip3 state3)))
+    (let ((len4 (bv-extract 267 264 decstate4)))
+    (let ((state4 (bv-extract 263 0 decstate4)))
+    (let ((extra4 (and extra3 (= 0b1 (getextra state4)))))
+    (let ((lenpred4 (and lenpred3 (/= len4 0x0))))
+    
+    ; FIFTH INSTRUCTION
+    (let ((eip4 (bv-add (bv-zero-extend len4 4) eip3)))
+    (let ((decstate5 (symbolic-insn eip4 state4)))
+    (let ((len5 (bv-extract 267 264 decstate5)))
+    (let ((state5 (bv-extract 263 0 decstate5)))
+    (let ((extra5 (and extra4 (= 0b1 (getextra state5)))))
+    (let ((lenpred5 (and lenpred4 (/= len5 0x0))))
+
+    ; SIXTH INSTRUCTION
+    (let ((eip5 (bv-add (bv-zero-extend len5 4) eip4)))
+    (let ((decstate6 (symbolic-insn eip5 state5)))
+    (let ((len6 (bv-extract 267 264 decstate6)))
+    (let ((state6 (bv-extract 263 0 decstate6)))
+    (let ((extra6 (and extra5 (= 0b1 (getextra state6)))))
+    (let ((lenpred6 (and lenpred5 (/= len6 0x0))))
+    
+    ; SEVENTH INSTRUCTION
+    (let ((eip6 (bv-add (bv-zero-extend len6 4) eip5)))
+    (let ((decstate7 (symbolic-insn eip6 state6)))
+    (let ((len7 (bv-extract 267 264 decstate7)))
+    (let ((state7 (bv-extract 263 0 decstate7)))
+    (let ((extra7 (and extra6 (= 0b1 (getextra state7)))))
+    (let ((lenpred7 (and lenpred6 (/= len7 0x0))))
+
+    ; EIGHTH INSTRUCTION
+    (let ((eip7 (bv-add (bv-zero-extend len7 4) eip6)))
+    (let ((decstate8 (symbolic-insn eip7 state7)))
+    (let ((len8 (bv-extract 267 264 decstate8)))
+    (let ((state8 (bv-extract 263 0 decstate8)))
+    (let ((extra8 (and extra7 (= 0b1 (getextra state8)))))
+    (let ((lenpred8 (and lenpred7 (/= len8 0x0))))
+    
+    ; NINTH INSTRUCTION
+    (let ((eip8 (bv-add (bv-zero-extend len8 4) eip7)))
+    (let ((decstate9 (symbolic-insn eip8 state8)))
+    (let ((len9 (bv-extract 267 264 decstate9)))
+    (let ((state9 (bv-extract 263 0 decstate9)))
+    (let ((extra9 (and extra8 (= 0b1 (getextra state9)))))
+    (let ((lenpred9 (and lenpred8 (/= len9 0x0))))
+
+    ; TENTH INSTRUCTION
+    (let ((eip9 (bv-add (bv-zero-extend len9 4) eip8)))
+    (let ((decstateA (symbolic-insn eip9 state9)))
+    (let ((lenA (bv-extract 267 264 decstateA)))
+    (let ((stateA (bv-extract 263 0 decstateA)))
+    (let ((extraA (and extra9 (= 0b1 (getextra stateA)))))
+    (let ((lenpredA (and lenpred9 (/= lenA 0x0))))
+
+    ; ELEVENTH INSTRUCTION
+    (let ((eipA (bv-add (bv-zero-extend lenA 4) eip9)))
+    (let ((decstateB (symbolic-insn eipA stateA)))
+    (let ((lenB (bv-extract 267 264 decstateB)))
+    (let ((stateB (bv-extract 263 0 decstateB)))
+    (let ((extraB (and extraA (= 0b1 (getextra stateB)))))
+    (let ((lenpredB (and lenpredA (/= lenB 0x0))))
+    
+    ; TWELVTH INSTRUCTION
+    (let ((eipB (bv-add (bv-zero-extend lenB 4) eipA)))
+    (let ((decstateC (symbolic-insn eipB stateB)))
+    (let ((lenC (bv-extract 267 264 decstateC)))
+    (let ((stateC (bv-extract 263 0 decstateC)))
+    (let ((extraC (and extraB (= 0b1 (getextra stateC)))))
+    (let ((lenpredC (and lenpredB (/= lenC 0x0))))
+
+    ; THIRTEENTH INSTRUCTION
+    (let ((eipC (bv-add (bv-zero-extend lenC 4) eipB)))
+    (let ((decstateD (symbolic-insn eipC stateC)))
+    (let ((lenD (bv-extract 267 264 decstate4)))
+    (let ((stateD (bv-extract 263 0 decstate4)))
+    (let ((extraD (and extraC (= 0b1 (getextra state4)))))
+    (let ((lenpredD (and lenpredC (/= lenD 0x0))))
+    
+    ; FOURTEENTH INSTRUCTION
+    (let ((eipD (bv-add (bv-zero-extend lenD 4) eipC)))
+    (let ((decstateE (symbolic-insn eipD state4)))
+    (let ((lenE (bv-extract 267 264 decstateE)))
+    (let ((stateE (bv-extract 263 0 decstateE)))
+    (let ((extraE (and extraD (= 0b1 (getextra stateE)))))
+    (let ((lenpredE (and lenpredD (/= lenE 0x0))))
+
+    ; FIFTEENTH INSTRUCTION
+    (let ((eipE (bv-add (bv-zero-extend lenE 4) eipD)))
+    (let ((decstateF (symbolic-insn eipE stateE)))
+    (let ((lenF (bv-extract 267 264 decstateF)))
+    (let ((stateF (bv-extract 263 0 decstateF)))
+    (let ((extraF (and extraE (= 0b1 (getextra stateF)))))
+    (let ((lenpredF (and lenpredE (/= lenF 0x0))))
+    
+    ; SIXTEENTH INSTRUCTION
+    (let ((eipF (bv-add (bv-zero-extend lenF 4) eipE)))
+    (let ((decstate10 (symbolic-insn eipF stateF)))
+    (let ((len10 (bv-extract 267 264 decstate10)))
+    (let ((state10 (bv-extract 263 0 decstate10)))
+    (let ((extra10 (and extraF (= 0b1 (getextra state10)))))
+    (let ((lenpred10 (and lenpredF (/= len10 0x0))))
+
+    ; SEVENTEENTH INSTRUCTION
+    (let ((eip10 (bv-add (bv-zero-extend len10 4) eipF)))
+    (let ((decstate11 (symbolic-insn eip10 state10)))
+    (let ((len11 (bv-extract 267 264 decstate11)))
+    (let ((state11 (bv-extract 263 0 decstate11)))
+    (let ((extra11 (and extra10 (= 0b1 (getextra state11)))))
+    (let ((lenpred11 (and lenpred10 (/= len11 0x0))))
+    
+    ; EIGHTEENTH INSTRUCTION
+    (let ((eip11 (bv-add (bv-zero-extend len11 4) eip10)))
+    (let ((decstate12 (symbolic-insn eip11 state11)))
+    (let ((len12 (bv-extract 267 264 decstate12)))
+    (let ((state12 (bv-extract 263 0 decstate12)))
+    (let ((extra12 (and extra11 (= 0b1 (getextra state12)))))
+    (let ((lenpred12 (and lenpred11 (/= len12 0x0))))
+
+    ; NINETEENTH INSTRUCTION
+    (let ((eip12 (bv-add (bv-zero-extend len12 4) eip11)))
+    (let ((decstate13 (symbolic-insn eip12 state12)))
+    (let ((len13 (bv-extract 267 264 decstate13)))
+    (let ((state13 (bv-extract 263 0 decstate13)))
+    (let ((extra13 (and extra12 (= 0b1 (getextra state13)))))
+    (let ((lenpred13 (and lenpred12 (/= len13 0x0))))
+
+    ; TWENTIETH INSTRUCTION
+    (let ((eip13 (bv-add (bv-zero-extend len13 4) eip12)))
+    (let ((decstate14 (symbolic-insn eip13 state13)))
+    (let ((len14 (bv-extract 267 264 decstate14)))
+    (let ((state14 (bv-extract 263 0 decstate14)))
+    (let ((extra14 (and extra13 (= 0b1 (getextra state14)))))
+    (let ((lenpred14 (and lenpred13 (/= len14 0x0))))
+
+    (let ((eip14 (bv-add (bv-zero-extend len14 4) eip13)))
+    ; ----------------------
+    ; FINALIZE STATE AND EIP
+    ; ----------------------
+
+    ; Call the final state "finalstate" (for convenience).
+    (let ((finalstate
+      (ite (= NumInstrs 0x01) state1
+      (ite (= NumInstrs 0x02) state2
+      (ite (= NumInstrs 0x03) state3
+      (ite (= NumInstrs 0x04) state4
+      (ite (= NumInstrs 0x05) state5
+      (ite (= NumInstrs 0x06) state6
+      (ite (= NumInstrs 0x07) state7
+      (ite (= NumInstrs 0x08) state8
+      (ite (= NumInstrs 0x09) state9
+      (ite (= NumInstrs 0x0A) stateA
+      (ite (= NumInstrs 0x0B) stateB
+      (ite (= NumInstrs 0x0C) stateC
+      (ite (= NumInstrs 0x0D) stateD
+      (ite (= NumInstrs 0x0E) stateE
+      (ite (= NumInstrs 0x0F) stateF
+      (ite (= NumInstrs 0x10) state10
+      (ite (= NumInstrs 0x11) state11
+      (ite (= NumInstrs 0x12) state12
+      (ite (= NumInstrs 0x13) state13
+                              state14)))))))))))))))))))))
+                              
+    ; Call the final EIP "finaleip" (for convenience).
+    (let ((finaleip
+      (ite (= NumInstrs 0x01) eip1
+      (ite (= NumInstrs 0x02) eip2
+      (ite (= NumInstrs 0x03) eip3
+      (ite (= NumInstrs 0x04) eip4
+      (ite (= NumInstrs 0x05) eip5
+      (ite (= NumInstrs 0x06) eip6
+      (ite (= NumInstrs 0x07) eip7
+      (ite (= NumInstrs 0x08) eip8
+      (ite (= NumInstrs 0x09) eip9
+      (ite (= NumInstrs 0x0A) eipA
+      (ite (= NumInstrs 0x0B) eipB
+      (ite (= NumInstrs 0x0C) eipC
+      (ite (= NumInstrs 0x0D) eipD
+      (ite (= NumInstrs 0x0E) eipE
+      (ite (= NumInstrs 0x0F) eipF
+      (ite (= NumInstrs 0x10) eip10
+      (ite (= NumInstrs 0x11) eip11
+      (ite (= NumInstrs 0x12) eip12
+      (ite (= NumInstrs 0x13) eip13
+                              eip14)))))))))))))))))))))
+
+    (let ((extrapred
+      (ite (= NumInstrs 0x01) extra1
+      (ite (= NumInstrs 0x02) extra2
+      (ite (= NumInstrs 0x03) extra3
+      (ite (= NumInstrs 0x04) extra4
+      (ite (= NumInstrs 0x05) extra5
+      (ite (= NumInstrs 0x06) extra6
+      (ite (= NumInstrs 0x07) extra7
+      (ite (= NumInstrs 0x08) extra8
+      (ite (= NumInstrs 0x09) extra9
+      (ite (= NumInstrs 0x0A) extraA
+      (ite (= NumInstrs 0x0B) extraB
+      (ite (= NumInstrs 0x0C) extraC
+      (ite (= NumInstrs 0x0D) extraD
+      (ite (= NumInstrs 0x0E) extraE
+      (ite (= NumInstrs 0x0F) extraF
+      (ite (= NumInstrs 0x10) extra10
+      (ite (= NumInstrs 0x11) extra11
+      (ite (= NumInstrs 0x12) extra12
+      (ite (= NumInstrs 0x13) extra13
+                              extra14)))))))))))))))))))))
+
+    (let ((lenpred
+      (ite (= NumInstrs 0x01) lenpred1
+      (ite (= NumInstrs 0x02) lenpred2
+      (ite (= NumInstrs 0x03) lenpred3
+      (ite (= NumInstrs 0x04) lenpred4
+      (ite (= NumInstrs 0x05) lenpred5
+      (ite (= NumInstrs 0x06) lenpred6
+      (ite (= NumInstrs 0x07) lenpred7
+      (ite (= NumInstrs 0x08) lenpred8
+      (ite (= NumInstrs 0x09) lenpred9
+      (ite (= NumInstrs 0x0A) lenpredA
+      (ite (= NumInstrs 0x0B) lenpredB
+      (ite (= NumInstrs 0x0C) lenpredC
+      (ite (= NumInstrs 0x0D) lenpredD
+      (ite (= NumInstrs 0x0E) lenpredE
+      (ite (= NumInstrs 0x0F) lenpredF
+      (ite (= NumInstrs 0x10) lenpred10
+      (ite (= NumInstrs 0x11) lenpred11
+      (ite (= NumInstrs 0x12) lenpred12
+      (ite (= NumInstrs 0x13) lenpred13
+                              lenpred14)))))))))))))))))))))
+
+    ; --------------------------------------------------
+    ; ISSUE CONSTRAINTS ABOUT FUNCTIONALITY AND ENCODING
+    ; --------------------------------------------------
+
+      (and
+        ; -----------------------------------
+        ; CONSTRAINTS REGARDING FUNCTIONALITY
+        ; -----------------------------------
+        ; All instructions have non-zero length (i.e. are valid)
+        lenpred
+
+        ; All additional constraints are valid
+        extrapred
+        
+        ; (bv-gt NumInstrs 0x00)
+        (= NumInstrs 0x03)
+
+;(let ((x (getreg8 ALIdx state0)))
+;(let ((y (getreg8 ALIdx finalstate)))
+;(ite (= 0b1 (bv-extract 0 0 x)) (and (= 0b0 (bv-extract 0 0 y))      (= (bv-extract 7 1 y) (bv-extract 7 1 x)))
+;(ite (= 0b1 (bv-extract 1 1 x)) (and (= 0b0 (bv-extract 1 1 y)) (and (= (bv-extract 7 2 y) (bv-extract 7 2 x)) (= (bv-extract 0 0 y) (bv-extract 0 0 x))))
+;(ite (= 0b1 (bv-extract 2 2 x)) (and (= 0b0 (bv-extract 2 2 y)) (and (= (bv-extract 7 3 y) (bv-extract 7 3 x)) (= (bv-extract 1 1 y) (bv-extract 1 1 x))))
+;(ite (= 0b1 (bv-extract 3 3 x)) (and (= 0b0 (bv-extract 3 3 y)) (and (= (bv-extract 7 4 y) (bv-extract 7 4 x)) (= (bv-extract 2 2 y) (bv-extract 2 2 x))))
+;(ite (= 0b1 (bv-extract 4 4 x)) (and (= 0b0 (bv-extract 4 4 y)) (and (= (bv-extract 7 5 y) (bv-extract 7 5 x)) (= (bv-extract 3 3 y) (bv-extract 3 3 x))))
+;(ite (= 0b1 (bv-extract 5 5 x)) (and (= 0b0 (bv-extract 5 5 y)) (and (= (bv-extract 7 6 y) (bv-extract 7 6 x)) (= (bv-extract 4 4 y) (bv-extract 4 4 x))))
+;(ite (= 0b1 (bv-extract 6 6 x)) (and (= 0b0 (bv-extract 6 6 y)) (and (= (bv-extract 7 7 y) (bv-extract 7 7 x)) (= (bv-extract 5 5 y) (bv-extract 5 5 x))))
+;(ite (= 0b1 (bv-extract 7 7 x)) (and (= 0b0 (bv-extract 7 7 y))      (= (bv-extract 6 0 y) (bv-extract 6 0 x)))
+;                                (= 0x00 y)))))))))))
+
+        ; Effect on state: eax becomes 0x00000000; all other registers preserved.
+        (= (getreg32 EaxIdx finalstate) 0x12345678)
+        ; (= (getreg8 AHIdx finalstate)
+        ;   (bv-add 
+        ;     (bv-zero-extend (bv-extract 0 0 (getreg8 ALIdx state0)) 7)
+        ;     (bv-zero-extend (bv-extract 1 1 (getreg8 ALIdx state0)) 7)
+        ;     (bv-zero-extend (bv-extract 2 2 (getreg8 ALIdx state0)) 7)
+        ;     (bv-zero-extend (bv-extract 3 3 (getreg8 ALIdx state0)) 7)
+        ;     (bv-zero-extend (bv-extract 4 4 (getreg8 ALIdx state0)) 7)
+        ;     (bv-zero-extend (bv-extract 5 5 (getreg8 ALIdx state0)) 7)
+        ;     (bv-zero-extend (bv-extract 6 6 (getreg8 ALIdx state0)) 7)
+        ;     (bv-zero-extend (bv-extract 7 7 (getreg8 ALIdx state0)) 7)
+        ;   )
+        ; )
+        (= (getreg32 EcxIdx finalstate) ecx)
+        (= (getreg32 EdxIdx finalstate) edx)
+        (= (getreg32 EbxIdx finalstate) ebx)
+        (= (getreg32 EspIdx finalstate) esp)
+        (= (getreg32 EbpIdx finalstate) ebp)
+        (= (getreg32 EsiIdx finalstate) esi)
+        (= (getreg32 EdiIdx finalstate) edi)
+   
+        ; ------------------------------
+        ; CONSTRAINTS REGARDING ENCODING
+        ; ------------------------------
+        ; Alternating even/odd
+        ; (=> (bv-lt idx (bv-sub finaleip 0x01)) (= 0b1 (bv-extract 0 0 (bv-xor (get-byte idx) (get-byte (bv-add idx 0x01)))))
+        ; First byte odd
+        ; (= 0b1 (bv-extract 0 0 (get-byte 0x00)))
+        ; Strictly increasing
+        (=> (bv-lt idx (bv-sub finaleip 0x01)) (bv-lt (get-byte idx) (get-byte (bv-add idx 0x01)))
+
+          ; First two bytes of each instruction are less than 0x20
+          ; (bv-lt (get-byte eip0) 0x20)
+          ; (bv-lt (get-byte (bv-add eip0 0x01)) 0x20)
+          ; (bv-lt (get-byte eip1) 0x20)
+          ; (bv-lt (get-byte (bv-add eip1 0x01)) 0x20)
+          ; (bv-lt (get-byte eip2) 0x20)
+          ; (bv-lt (get-byte (bv-add eip2 0x01)) 0x20)
+        ;(=> (bv-lt idx finaleip) (bv-le (get-byte idx) 0x20))
+        ;(/= (get-byte idx) 0x00)
+      ) ; end and
+    )))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))) ; end let * 12
+  ) ; end forall
+) ; end assert
+
+; Solve the constraint system
+(ef-solve)
+
+; Produce a model, i.e., values for bytecode00-bytecodeFF.
+; This statement will crash yices if (ef-solve) returned unsatisfiable.
+(show-model)

@@ -1,0 +1,653 @@
+(define bytecode00::(bitvector 8)) (define bytecode01::(bitvector 8))
+(define bytecode02::(bitvector 8)) (define bytecode03::(bitvector 8))
+(define bytecode04::(bitvector 8)) (define bytecode05::(bitvector 8))
+(define bytecode06::(bitvector 8)) (define bytecode07::(bitvector 8))
+(define bytecode08::(bitvector 8)) (define bytecode09::(bitvector 8))
+(define bytecode0A::(bitvector 8)) (define bytecode0B::(bitvector 8))
+(define bytecode0C::(bitvector 8)) (define bytecode0D::(bitvector 8))
+(define bytecode0E::(bitvector 8)) (define bytecode0F::(bitvector 8))
+(define bytecode10::(bitvector 8)) (define bytecode11::(bitvector 8))
+(define bytecode12::(bitvector 8)) (define bytecode13::(bitvector 8))
+(define bytecode14::(bitvector 8)) (define bytecode15::(bitvector 8))
+(define bytecode16::(bitvector 8)) (define bytecode17::(bitvector 8))
+(define bytecode18::(bitvector 8)) (define bytecode19::(bitvector 8))
+(define bytecode1A::(bitvector 8)) (define bytecode1B::(bitvector 8))
+(define bytecode1C::(bitvector 8)) (define bytecode1D::(bitvector 8))
+(define bytecode1E::(bitvector 8)) (define bytecode1F::(bitvector 8))
+(define bytecode20::(bitvector 8)) (define bytecode21::(bitvector 8))
+(define bytecode22::(bitvector 8)) (define bytecode23::(bitvector 8))
+(define bytecode24::(bitvector 8)) (define bytecode25::(bitvector 8))
+(define bytecode26::(bitvector 8)) (define bytecode27::(bitvector 8))
+(define bytecode28::(bitvector 8)) (define bytecode29::(bitvector 8))
+(define bytecode2A::(bitvector 8)) (define bytecode2B::(bitvector 8))
+(define bytecode2C::(bitvector 8)) (define bytecode2D::(bitvector 8))
+(define bytecode2E::(bitvector 8)) (define bytecode2F::(bitvector 8))
+(define bytecode30::(bitvector 8)) (define bytecode31::(bitvector 8))
+(define bytecode32::(bitvector 8)) (define bytecode33::(bitvector 8))
+(define bytecode34::(bitvector 8)) (define bytecode35::(bitvector 8))
+(define bytecode36::(bitvector 8)) (define bytecode37::(bitvector 8))
+(define bytecode38::(bitvector 8)) (define bytecode39::(bitvector 8))
+(define bytecode3A::(bitvector 8)) (define bytecode3B::(bitvector 8))
+(define bytecode3C::(bitvector 8)) (define bytecode3D::(bitvector 8))
+(define bytecode3E::(bitvector 8)) (define bytecode3F::(bitvector 8))
+(define bytecode40::(bitvector 8)) (define bytecode41::(bitvector 8))
+(define bytecode42::(bitvector 8)) (define bytecode43::(bitvector 8))
+(define bytecode44::(bitvector 8)) (define bytecode45::(bitvector 8))
+(define bytecode46::(bitvector 8)) (define bytecode47::(bitvector 8))
+(define bytecode48::(bitvector 8)) (define bytecode49::(bitvector 8))
+(define bytecode4A::(bitvector 8)) (define bytecode4B::(bitvector 8))
+(define bytecode4C::(bitvector 8)) (define bytecode4D::(bitvector 8))
+(define bytecode4E::(bitvector 8)) (define bytecode4F::(bitvector 8))
+(define bytecode50::(bitvector 8)) (define bytecode51::(bitvector 8))
+(define bytecode52::(bitvector 8)) (define bytecode53::(bitvector 8))
+(define bytecode54::(bitvector 8)) (define bytecode55::(bitvector 8))
+(define bytecode56::(bitvector 8)) (define bytecode57::(bitvector 8))
+(define bytecode58::(bitvector 8)) (define bytecode59::(bitvector 8))
+(define bytecode5A::(bitvector 8)) (define bytecode5B::(bitvector 8))
+(define bytecode5C::(bitvector 8)) (define bytecode5D::(bitvector 8))
+(define bytecode5E::(bitvector 8)) (define bytecode5F::(bitvector 8))
+(define bytecode60::(bitvector 8)) (define bytecode61::(bitvector 8))
+(define bytecode62::(bitvector 8)) (define bytecode63::(bitvector 8))
+(define bytecode64::(bitvector 8)) (define bytecode65::(bitvector 8))
+(define bytecode66::(bitvector 8)) (define bytecode67::(bitvector 8))
+(define bytecode68::(bitvector 8)) (define bytecode69::(bitvector 8))
+(define bytecode6A::(bitvector 8)) (define bytecode6B::(bitvector 8))
+(define bytecode6C::(bitvector 8)) (define bytecode6D::(bitvector 8))
+(define bytecode6E::(bitvector 8)) (define bytecode6F::(bitvector 8))
+(define bytecode70::(bitvector 8)) (define bytecode71::(bitvector 8))
+(define bytecode72::(bitvector 8)) (define bytecode73::(bitvector 8))
+(define bytecode74::(bitvector 8)) (define bytecode75::(bitvector 8))
+(define bytecode76::(bitvector 8)) (define bytecode77::(bitvector 8))
+(define bytecode78::(bitvector 8)) (define bytecode79::(bitvector 8))
+(define bytecode7A::(bitvector 8)) (define bytecode7B::(bitvector 8))
+(define bytecode7C::(bitvector 8)) (define bytecode7D::(bitvector 8))
+(define bytecode7E::(bitvector 8)) (define bytecode7F::(bitvector 8))
+(define bytecode80::(bitvector 8)) (define bytecode81::(bitvector 8))
+(define bytecode82::(bitvector 8)) (define bytecode83::(bitvector 8))
+(define bytecode84::(bitvector 8)) (define bytecode85::(bitvector 8))
+(define bytecode86::(bitvector 8)) (define bytecode87::(bitvector 8))
+(define bytecode88::(bitvector 8)) (define bytecode89::(bitvector 8))
+(define bytecode8A::(bitvector 8)) (define bytecode8B::(bitvector 8))
+(define bytecode8C::(bitvector 8)) (define bytecode8D::(bitvector 8))
+(define bytecode8E::(bitvector 8)) (define bytecode8F::(bitvector 8))
+(define bytecode90::(bitvector 8)) (define bytecode91::(bitvector 8))
+(define bytecode92::(bitvector 8)) (define bytecode93::(bitvector 8))
+(define bytecode94::(bitvector 8)) (define bytecode95::(bitvector 8))
+(define bytecode96::(bitvector 8)) (define bytecode97::(bitvector 8))
+(define bytecode98::(bitvector 8)) (define bytecode99::(bitvector 8))
+(define bytecode9A::(bitvector 8)) (define bytecode9B::(bitvector 8))
+(define bytecode9C::(bitvector 8)) (define bytecode9D::(bitvector 8))
+(define bytecode9E::(bitvector 8)) (define bytecode9F::(bitvector 8))
+(define bytecodeA0::(bitvector 8)) (define bytecodeA1::(bitvector 8))
+(define bytecodeA2::(bitvector 8)) (define bytecodeA3::(bitvector 8))
+(define bytecodeA4::(bitvector 8)) (define bytecodeA5::(bitvector 8))
+(define bytecodeA6::(bitvector 8)) (define bytecodeA7::(bitvector 8))
+(define bytecodeA8::(bitvector 8)) (define bytecodeA9::(bitvector 8))
+(define bytecodeAA::(bitvector 8)) (define bytecodeAB::(bitvector 8))
+(define bytecodeAC::(bitvector 8)) (define bytecodeAD::(bitvector 8))
+(define bytecodeAE::(bitvector 8)) (define bytecodeAF::(bitvector 8))
+(define bytecodeB0::(bitvector 8)) (define bytecodeB1::(bitvector 8))
+(define bytecodeB2::(bitvector 8)) (define bytecodeB3::(bitvector 8))
+(define bytecodeB4::(bitvector 8)) (define bytecodeB5::(bitvector 8))
+(define bytecodeB6::(bitvector 8)) (define bytecodeB7::(bitvector 8))
+(define bytecodeB8::(bitvector 8)) (define bytecodeB9::(bitvector 8))
+(define bytecodeBA::(bitvector 8)) (define bytecodeBB::(bitvector 8))
+(define bytecodeBC::(bitvector 8)) (define bytecodeBD::(bitvector 8))
+(define bytecodeBE::(bitvector 8)) (define bytecodeBF::(bitvector 8))
+(define bytecodeC0::(bitvector 8)) (define bytecodeC1::(bitvector 8))
+(define bytecodeC2::(bitvector 8)) (define bytecodeC3::(bitvector 8))
+(define bytecodeC4::(bitvector 8)) (define bytecodeC5::(bitvector 8))
+(define bytecodeC6::(bitvector 8)) (define bytecodeC7::(bitvector 8))
+(define bytecodeC8::(bitvector 8)) (define bytecodeC9::(bitvector 8))
+(define bytecodeCA::(bitvector 8)) (define bytecodeCB::(bitvector 8))
+(define bytecodeCC::(bitvector 8)) (define bytecodeCD::(bitvector 8))
+(define bytecodeCE::(bitvector 8)) (define bytecodeCF::(bitvector 8))
+(define bytecodeD0::(bitvector 8)) (define bytecodeD1::(bitvector 8))
+(define bytecodeD2::(bitvector 8)) (define bytecodeD3::(bitvector 8))
+(define bytecodeD4::(bitvector 8)) (define bytecodeD5::(bitvector 8))
+(define bytecodeD6::(bitvector 8)) (define bytecodeD7::(bitvector 8))
+(define bytecodeD8::(bitvector 8)) (define bytecodeD9::(bitvector 8))
+(define bytecodeDA::(bitvector 8)) (define bytecodeDB::(bitvector 8))
+(define bytecodeDC::(bitvector 8)) (define bytecodeDD::(bitvector 8))
+(define bytecodeDE::(bitvector 8)) (define bytecodeDF::(bitvector 8))
+(define bytecodeE0::(bitvector 8)) (define bytecodeE1::(bitvector 8))
+(define bytecodeE2::(bitvector 8)) (define bytecodeE3::(bitvector 8))
+(define bytecodeE4::(bitvector 8)) (define bytecodeE5::(bitvector 8))
+(define bytecodeE6::(bitvector 8)) (define bytecodeE7::(bitvector 8))
+(define bytecodeE8::(bitvector 8)) (define bytecodeE9::(bitvector 8))
+(define bytecodeEA::(bitvector 8)) (define bytecodeEB::(bitvector 8))
+(define bytecodeEC::(bitvector 8)) (define bytecodeED::(bitvector 8))
+(define bytecodeEE::(bitvector 8)) (define bytecodeEF::(bitvector 8))
+(define bytecodeF0::(bitvector 8)) (define bytecodeF1::(bitvector 8))
+(define bytecodeF2::(bitvector 8)) (define bytecodeF3::(bitvector 8))
+(define bytecodeF4::(bitvector 8)) (define bytecodeF5::(bitvector 8))
+(define bytecodeF6::(bitvector 8)) (define bytecodeF7::(bitvector 8))
+(define bytecodeF8::(bitvector 8)) (define bytecodeF9::(bitvector 8))
+(define bytecodeFA::(bitvector 8)) (define bytecodeFB::(bitvector 8))
+(define bytecodeFC::(bitvector 8)) (define bytecodeFD::(bitvector 8))
+(define bytecodeFE::(bitvector 8)) (define bytecodeFF::(bitvector 8))
+
+; Used instead of an array lookup. Pass in byte XX, get back the bytecodeXX
+; variable.
+(define get-byte::(-> (bitvector 8) (bitvector 8)) 
+	(lambda (x::(bitvector 8))
+    (ite (= x 0x00) bytecode00
+    (ite (= x 0x01) bytecode01
+    (ite (= x 0x02) bytecode02
+    (ite (= x 0x03) bytecode03
+    (ite (= x 0x04) bytecode04
+    (ite (= x 0x05) bytecode05
+    (ite (= x 0x06) bytecode06
+    (ite (= x 0x07) bytecode07
+    (ite (= x 0x08) bytecode08
+    (ite (= x 0x09) bytecode09
+    (ite (= x 0x0A) bytecode0A
+    (ite (= x 0x0B) bytecode0B
+    (ite (= x 0x0C) bytecode0C
+    (ite (= x 0x0D) bytecode0D
+    (ite (= x 0x0E) bytecode0E
+    (ite (= x 0x0F) bytecode0F
+    (ite (= x 0x10) bytecode10
+    (ite (= x 0x11) bytecode11
+    (ite (= x 0x12) bytecode12
+    (ite (= x 0x13) bytecode13
+    (ite (= x 0x14) bytecode14
+    (ite (= x 0x15) bytecode15
+    (ite (= x 0x16) bytecode16
+    (ite (= x 0x17) bytecode17
+    (ite (= x 0x18) bytecode18
+    (ite (= x 0x19) bytecode19
+    (ite (= x 0x1A) bytecode1A
+    (ite (= x 0x1B) bytecode1B
+    (ite (= x 0x1C) bytecode1C
+    (ite (= x 0x1D) bytecode1D
+    (ite (= x 0x1E) bytecode1E
+    (ite (= x 0x1F) bytecode1F
+    (ite (= x 0x20) bytecode20
+    (ite (= x 0x21) bytecode21
+    (ite (= x 0x22) bytecode22
+    (ite (= x 0x23) bytecode23
+    (ite (= x 0x24) bytecode24
+    (ite (= x 0x25) bytecode25
+    (ite (= x 0x26) bytecode26
+    (ite (= x 0x27) bytecode27
+    (ite (= x 0x28) bytecode28
+    (ite (= x 0x29) bytecode29
+    (ite (= x 0x2A) bytecode2A
+    (ite (= x 0x2B) bytecode2B
+    (ite (= x 0x2C) bytecode2C
+    (ite (= x 0x2D) bytecode2D
+    (ite (= x 0x2E) bytecode2E
+    (ite (= x 0x2F) bytecode2F
+    (ite (= x 0x30) bytecode30
+    (ite (= x 0x31) bytecode31
+    (ite (= x 0x32) bytecode32
+    (ite (= x 0x33) bytecode33
+    (ite (= x 0x34) bytecode34
+    (ite (= x 0x35) bytecode35
+    (ite (= x 0x36) bytecode36
+    (ite (= x 0x37) bytecode37
+    (ite (= x 0x38) bytecode38
+    (ite (= x 0x39) bytecode39
+    (ite (= x 0x3A) bytecode3A
+    (ite (= x 0x3B) bytecode3B
+    (ite (= x 0x3C) bytecode3C
+    (ite (= x 0x3D) bytecode3D
+    (ite (= x 0x3E) bytecode3E
+    (ite (= x 0x3F) bytecode3F
+    (ite (= x 0x40) bytecode40
+    (ite (= x 0x41) bytecode41
+    (ite (= x 0x42) bytecode42
+    (ite (= x 0x43) bytecode43
+    (ite (= x 0x44) bytecode44
+    (ite (= x 0x45) bytecode45
+    (ite (= x 0x46) bytecode46
+    (ite (= x 0x47) bytecode47
+    (ite (= x 0x48) bytecode48
+    (ite (= x 0x49) bytecode49
+    (ite (= x 0x4A) bytecode4A
+    (ite (= x 0x4B) bytecode4B
+    (ite (= x 0x4C) bytecode4C
+    (ite (= x 0x4D) bytecode4D
+    (ite (= x 0x4E) bytecode4E
+    (ite (= x 0x4F) bytecode4F
+    (ite (= x 0x50) bytecode50
+    (ite (= x 0x51) bytecode51
+    (ite (= x 0x52) bytecode52
+    (ite (= x 0x53) bytecode53
+    (ite (= x 0x54) bytecode54
+    (ite (= x 0x55) bytecode55
+    (ite (= x 0x56) bytecode56
+    (ite (= x 0x57) bytecode57
+    (ite (= x 0x58) bytecode58
+    (ite (= x 0x59) bytecode59
+    (ite (= x 0x5A) bytecode5A
+    (ite (= x 0x5B) bytecode5B
+    (ite (= x 0x5C) bytecode5C
+    (ite (= x 0x5D) bytecode5D
+    (ite (= x 0x5E) bytecode5E
+    (ite (= x 0x5F) bytecode5F
+    (ite (= x 0x60) bytecode60
+    (ite (= x 0x61) bytecode61
+    (ite (= x 0x62) bytecode62
+    (ite (= x 0x63) bytecode63
+    (ite (= x 0x64) bytecode64
+    (ite (= x 0x65) bytecode65
+    (ite (= x 0x66) bytecode66
+    (ite (= x 0x67) bytecode67
+    (ite (= x 0x68) bytecode68
+    (ite (= x 0x69) bytecode69
+    (ite (= x 0x6A) bytecode6A
+    (ite (= x 0x6B) bytecode6B
+    (ite (= x 0x6C) bytecode6C
+    (ite (= x 0x6D) bytecode6D
+    (ite (= x 0x6E) bytecode6E
+    (ite (= x 0x6F) bytecode6F
+    (ite (= x 0x70) bytecode70
+    (ite (= x 0x71) bytecode71
+    (ite (= x 0x72) bytecode72
+    (ite (= x 0x73) bytecode73
+    (ite (= x 0x74) bytecode74
+    (ite (= x 0x75) bytecode75
+    (ite (= x 0x76) bytecode76
+    (ite (= x 0x77) bytecode77
+    (ite (= x 0x78) bytecode78
+    (ite (= x 0x79) bytecode79
+    (ite (= x 0x7A) bytecode7A
+    (ite (= x 0x7B) bytecode7B
+    (ite (= x 0x7C) bytecode7C
+    (ite (= x 0x7D) bytecode7D
+    (ite (= x 0x7E) bytecode7E
+    (ite (= x 0x7F) bytecode7F
+    (ite (= x 0x80) bytecode80
+    (ite (= x 0x81) bytecode81
+    (ite (= x 0x82) bytecode82
+    (ite (= x 0x83) bytecode83
+    (ite (= x 0x84) bytecode84
+    (ite (= x 0x85) bytecode85
+    (ite (= x 0x86) bytecode86
+    (ite (= x 0x87) bytecode87
+    (ite (= x 0x88) bytecode88
+    (ite (= x 0x89) bytecode89
+    (ite (= x 0x8A) bytecode8A
+    (ite (= x 0x8B) bytecode8B
+    (ite (= x 0x8C) bytecode8C
+    (ite (= x 0x8D) bytecode8D
+    (ite (= x 0x8E) bytecode8E
+    (ite (= x 0x8F) bytecode8F
+    (ite (= x 0x90) bytecode90
+    (ite (= x 0x91) bytecode91
+    (ite (= x 0x92) bytecode92
+    (ite (= x 0x93) bytecode93
+    (ite (= x 0x94) bytecode94
+    (ite (= x 0x95) bytecode95
+    (ite (= x 0x96) bytecode96
+    (ite (= x 0x97) bytecode97
+    (ite (= x 0x98) bytecode98
+    (ite (= x 0x99) bytecode99
+    (ite (= x 0x9A) bytecode9A
+    (ite (= x 0x9B) bytecode9B
+    (ite (= x 0x9C) bytecode9C
+    (ite (= x 0x9D) bytecode9D
+    (ite (= x 0x9E) bytecode9E
+    (ite (= x 0x9F) bytecode9F
+    (ite (= x 0xA0) bytecodeA0
+    (ite (= x 0xA1) bytecodeA1
+    (ite (= x 0xA2) bytecodeA2
+    (ite (= x 0xA3) bytecodeA3
+    (ite (= x 0xA4) bytecodeA4
+    (ite (= x 0xA5) bytecodeA5
+    (ite (= x 0xA6) bytecodeA6
+    (ite (= x 0xA7) bytecodeA7
+    (ite (= x 0xA8) bytecodeA8
+    (ite (= x 0xA9) bytecodeA9
+    (ite (= x 0xAA) bytecodeAA
+    (ite (= x 0xAB) bytecodeAB
+    (ite (= x 0xAC) bytecodeAC
+    (ite (= x 0xAD) bytecodeAD
+    (ite (= x 0xAE) bytecodeAE
+    (ite (= x 0xAF) bytecodeAF
+    (ite (= x 0xB0) bytecodeB0
+    (ite (= x 0xB1) bytecodeB1
+    (ite (= x 0xB2) bytecodeB2
+    (ite (= x 0xB3) bytecodeB3
+    (ite (= x 0xB4) bytecodeB4
+    (ite (= x 0xB5) bytecodeB5
+    (ite (= x 0xB6) bytecodeB6
+    (ite (= x 0xB7) bytecodeB7
+    (ite (= x 0xB8) bytecodeB8
+    (ite (= x 0xB9) bytecodeB9
+    (ite (= x 0xBA) bytecodeBA
+    (ite (= x 0xBB) bytecodeBB
+    (ite (= x 0xBC) bytecodeBC
+    (ite (= x 0xBD) bytecodeBD
+    (ite (= x 0xBE) bytecodeBE
+    (ite (= x 0xBF) bytecodeBF
+    (ite (= x 0xC0) bytecodeC0
+    (ite (= x 0xC1) bytecodeC1
+    (ite (= x 0xC2) bytecodeC2
+    (ite (= x 0xC3) bytecodeC3
+    (ite (= x 0xC4) bytecodeC4
+    (ite (= x 0xC5) bytecodeC5
+    (ite (= x 0xC6) bytecodeC6
+    (ite (= x 0xC7) bytecodeC7
+    (ite (= x 0xC8) bytecodeC8
+    (ite (= x 0xC9) bytecodeC9
+    (ite (= x 0xCA) bytecodeCA
+    (ite (= x 0xCB) bytecodeCB
+    (ite (= x 0xCC) bytecodeCC
+    (ite (= x 0xCD) bytecodeCD
+    (ite (= x 0xCE) bytecodeCE
+    (ite (= x 0xCF) bytecodeCF
+    (ite (= x 0xD0) bytecodeD0
+    (ite (= x 0xD1) bytecodeD1
+    (ite (= x 0xD2) bytecodeD2
+    (ite (= x 0xD3) bytecodeD3
+    (ite (= x 0xD4) bytecodeD4
+    (ite (= x 0xD5) bytecodeD5
+    (ite (= x 0xD6) bytecodeD6
+    (ite (= x 0xD7) bytecodeD7
+    (ite (= x 0xD8) bytecodeD8
+    (ite (= x 0xD9) bytecodeD9
+    (ite (= x 0xDA) bytecodeDA
+    (ite (= x 0xDB) bytecodeDB
+    (ite (= x 0xDC) bytecodeDC
+    (ite (= x 0xDD) bytecodeDD
+    (ite (= x 0xDE) bytecodeDE
+    (ite (= x 0xDF) bytecodeDF
+    (ite (= x 0xE0) bytecodeE0
+    (ite (= x 0xE1) bytecodeE1
+    (ite (= x 0xE2) bytecodeE2
+    (ite (= x 0xE3) bytecodeE3
+    (ite (= x 0xE4) bytecodeE4
+    (ite (= x 0xE5) bytecodeE5
+    (ite (= x 0xE6) bytecodeE6
+    (ite (= x 0xE7) bytecodeE7
+    (ite (= x 0xE8) bytecodeE8
+    (ite (= x 0xE9) bytecodeE9
+    (ite (= x 0xEA) bytecodeEA
+    (ite (= x 0xEB) bytecodeEB
+    (ite (= x 0xEC) bytecodeEC
+    (ite (= x 0xED) bytecodeED
+    (ite (= x 0xEE) bytecodeEE
+    (ite (= x 0xEF) bytecodeEF
+    (ite (= x 0xF0) bytecodeF0
+    (ite (= x 0xF1) bytecodeF1
+    (ite (= x 0xF2) bytecodeF2
+    (ite (= x 0xF3) bytecodeF3
+    (ite (= x 0xF4) bytecodeF4
+    (ite (= x 0xF5) bytecodeF5
+    (ite (= x 0xF6) bytecodeF6
+    (ite (= x 0xF7) bytecodeF7
+    (ite (= x 0xF8) bytecodeF8
+    (ite (= x 0xF9) bytecodeF9
+    (ite (= x 0xFA) bytecodeFA
+    (ite (= x 0xFB) bytecodeFB
+    (ite (= x 0xFC) bytecodeFC
+    (ite (= x 0xFD) bytecodeFD
+    (ite (= x 0xFE) bytecodeFE
+    (ite (= x 0xFF) bytecodeFF
+    bytecode04))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))
+  )
+)
+
+; getstate(reg,state). Return the value of register 'reg' from state 'state'.
+(define getstate::(-> (bitvector 3) (bitvector 256) (bitvector 32))
+  (lambda (x::(bitvector 3) z::(bitvector 256))
+    (ite (= x 0b000) (bv-extract 31    0 z)
+    (ite (= x 0b001) (bv-extract 63   32 z)
+    (ite (= x 0b010) (bv-extract 95   64 z)
+    (ite (= x 0b011) (bv-extract 127  96 z)
+    (ite (= x 0b100) (bv-extract 159 128 z)
+    (ite (= x 0b101) (bv-extract 191 160 z)
+    (ite (= x 0b110) (bv-extract 223 192 z)
+                     (bv-extract 255 224 z)
+    )))))))
+  )
+)
+
+; putstate(reg,state,value). Update register 'reg' to value 'value' in state
+; 'state'; return the new state.
+(define putstate::(-> (bitvector 3) (bitvector 32) (bitvector 256) (bitvector 256))
+  (lambda (x::(bitvector 3) y::(bitvector 32) z::(bitvector 256))
+    (ite (= x 0b000) (bv-concat (bv-extract 255  32 z) y)
+    (ite (= x 0b001) (bv-concat (bv-extract 255  64 z) y (bv-extract 31  0 z))
+    (ite (= x 0b010) (bv-concat (bv-extract 255  96 z) y (bv-extract 63  0 z))
+    (ite (= x 0b011) (bv-concat (bv-extract 255 128 z) y (bv-extract 95  0 z))
+    (ite (= x 0b100) (bv-concat (bv-extract 255 160 z) y (bv-extract 127 0 z))
+    (ite (= x 0b101) (bv-concat (bv-extract 255 192 z) y (bv-extract 159 0 z))
+    (ite (= x 0b110) (bv-concat (bv-extract 255 224 z) y (bv-extract 191 0 z))
+                     (bv-concat y (bv-extract 223 0 z))
+    )))))))
+  )
+)
+
+; symbolic-insn(eip,state). Decode an instruction at eip 'eip'. Perform the
+; operation specified by that instruction. Consult and update the state 'state'
+; accordingly; return the new state concatenated with the length of the 
+; instruction. In other words, this function simulates the effects of executing
+; every possible instruction. 
+(define symbolic-insn::(-> (-> (bitvector 8) (bitvector 8)) (bitvector 8) (bitvector 256) (bitvector 264))
+	(lambda (f-get-byte::(-> (bitvector 8) (bitvector 8)) eip::(bitvector 8) state::(bitvector 256))
+    (let ((byte0 (f-get-byte eip)))
+    (let ((byte1 (f-get-byte (bv-add 0x01 eip))))
+    (let ((byte2 (f-get-byte (bv-add 0x02 eip))))
+    (let ((byte3 (f-get-byte (bv-add 0x03 eip))))
+    (let ((byte4 (f-get-byte (bv-add 0x04 eip))))
+    ; xor reg, reg
+    (ite (= (bv-and byte0 0xC0) 0x00)
+      (let ((lhsreg0 (bv-extract 5 3 byte0)))
+      (let ((rhsreg0 (bv-extract 2 0 byte0)))
+      (let ((newstate (putstate lhsreg0 (bv-xor (getstate lhsreg0 state) (getstate rhsreg0 state)) state)))
+        (bv-concat 0x01 newstate)
+      )))
+    ; add reg, reg
+    (ite (= (bv-and byte0 0xC0) 0x40)
+      (let ((lhsreg0 (bv-extract 5 3 byte0)))
+      (let ((rhsreg0 (bv-extract 2 0 byte0)))
+      (let ((newstate (putstate lhsreg0 (bv-add (getstate lhsreg0 state) (getstate rhsreg0 state)) state)))
+        (bv-concat 0x01 newstate)
+      )))
+    ; mov reg, reg
+    (ite (= (bv-and byte0 0xC0) 0x80)
+      (let ((lhsreg0 (bv-extract 5 3 byte0)))
+      (let ((rhsreg0 (bv-extract 2 0 byte0)))
+      (let ((newstate (putstate lhsreg0 (getstate rhsreg0 state) state)))
+        (bv-concat 0x01 newstate)
+      )))
+    ; complex 0xC0 case
+      (let ((opcode (bv-extract 5 3 byte0)))
+      (let ((lhsreg0 (bv-extract 2 0 byte0)))
+      ; inc reg
+      (ite (= opcode 0b000)
+        (let ((newstate (putstate lhsreg0 (bv-add (getstate lhsreg0 state) 0x00000001) state)))
+        (bv-concat 0x01 newstate))
+      ; dec reg
+      (ite (= opcode 0b001)
+        (let ((newstate (putstate lhsreg0 (bv-sub (getstate lhsreg0 state) 0x00000001) state)))
+        (bv-concat 0x01 newstate))
+      ; neg reg
+      (ite (= opcode 0b010)
+        (let ((newstate (putstate lhsreg0 (bv-neg (getstate lhsreg0 state)) state)))
+        (bv-concat 0x01 newstate))
+      ; not reg
+      (ite (= opcode 0b011)
+        (let ((newstate (putstate lhsreg0 (bv-not (getstate lhsreg0 state)) state)))
+        (bv-concat 0x01 newstate))
+      (let ((rhsval0 (bv-concat byte4 byte3 byte2 byte1)))
+      ; add reg, imm32
+      (ite (= opcode 0b100)
+        (let ((newstate (putstate lhsreg0 (bv-add (getstate lhsreg0 state) rhsval0) state)))
+        (bv-concat 0x05 newstate))
+      ; xor reg, imm32
+      (ite (= opcode 0b101)
+        (let ((newstate (putstate lhsreg0 (bv-xor (getstate lhsreg0 state) rhsval0) state)))
+        (bv-concat 0x05 newstate))
+      ; and reg, imm32
+      (ite (= opcode 0b110)
+        (let ((newstate (putstate lhsreg0 (bv-and (getstate lhsreg0 state) rhsval0) state)))
+        (bv-concat 0x05 newstate))
+      ; opcode == 0b111
+      ; or reg, imm32
+        (let ((newstate (putstate lhsreg0 (bv-or  (getstate lhsreg0 state) rhsval0) state)))
+        (bv-concat 0x05 newstate)))))))))))))))
+    )))))
+  )
+) 
+
+(define get-byte-big::(-> (bitvector 2048) (bitvector 8) (bitvector 8)) 
+	(lambda (mem::(bitvector 2048) x::(bitvector 8))
+    (bv-extract 7 0 (bv-lshr mem (bv-zero-extend x 2040)))
+  )
+)
+
+; The main assertion.
+(assert 
+  ; For every possible input state (r0, ..., r7).
+  ; There is an additional universally-quantified variable idx: used to make 
+  ; statements about the bytes in the encoding.
+  (forall (r0::(bitvector 32) r1::(bitvector 32) r2::(bitvector 32) r3::(bitvector 32) r4::(bitvector 32) r5::(bitvector 32) r6::(bitvector 32) r7::(bitvector 32) idx::(bitvector 8) othermem::(bitvector 2048))
+    ; ------------------------
+    ; INITIALIZE STATE AND EIP
+    ; ------------------------
+    (let ((my-get-byte
+    	(lambda (x::(bitvector 8))
+      (bv-extract 7 0 (bv-lshr othermem (bv-zero-extend x 2040))))))
+    ; Create the input "state" by concatenating all of the inputs.
+    (let ((state0   (bv-concat r7 r6 r5 r4 r3 r2 r1 r0)))
+    ; Set initial EIP to zero.
+    (let ((eip0     0x00))
+    
+    ; ------------------------
+    ; SIMULATE ONE INSTRUCTION
+    ; ------------------------
+    
+    ; Perform symbolic simulation of one instruction (any instruction).
+    (let ((synsem0  (symbolic-insn get-byte eip0 state0)))
+    ; Extract the length of the instruction.
+    (let ((insn0len (bv-extract 263 256 synsem0)))
+    ; Extract the output state after having executed the instruction.
+    (let ((state1   (bv-extract 255   0 synsem0)))
+    ; Extract EIP after executing the instruction.
+    (let ((eip1     (bv-add eip0 insn0len)))
+    
+    ; ------------------------
+    ; SIMULATE ONE INSTRUCTION
+    ; ------------------------
+    
+    ; Perform symbolic simulation of one instruction (any instruction).
+    (let ((synsem1  (symbolic-insn get-byte eip1 state1)))
+    ; Extract the length of the instruction.
+    (let ((insn1len (bv-extract 263 256 synsem1)))
+    ; Extract the output state after having executed the instruction.
+    (let ((state2   (bv-extract 255   0 synsem1)))
+    ; Extract EIP after executing the instruction.
+    (let ((eip2 (bv-add eip1 insn1len)))
+
+    ; ----------------------
+    ; FINALIZE STATE AND EIP
+    ; ----------------------
+
+    ; Call the final state "finalstate" (for convenience).
+    (let ((finalstate state2))
+    ; Call the final EIP "finaleip" (for convenience).
+    (let ((finaleip eip2))
+    
+    ; ------------------------
+    ; OTHER: SIMULATE ONE INSTRUCTION
+    ; ------------------------
+    
+    ; Perform symbolic simulation of one instruction (any instruction).
+    (let ((othersynsem0  (symbolic-insn my-get-byte eip0 state0)))
+    ; Extract the length of the instruction.
+    (let ((otherinsn0len (bv-extract 263 256 othersynsem0)))
+    ; Extract the output state after having executed the instruction.
+    (let ((otherstate1   (bv-extract 255   0 othersynsem0)))
+    ; Extract EIP after executing the instruction.
+    (let ((othereip1     (bv-add eip0 otherinsn0len)))
+    
+    ; ------------------------
+    ; OTHER: SIMULATE ONE INSTRUCTION
+    ; ------------------------
+    
+    ; Perform symbolic simulation of one instruction (any instruction).
+    (let ((othersynsem1  (symbolic-insn my-get-byte othereip1 otherstate1)))
+    ; Extract the length of the instruction.
+    (let ((otherinsn1len (bv-extract 263 256 othersynsem1)))
+    ; Extract the output state after having executed the instruction.
+    (let ((otherstate2   (bv-extract 255   0 othersynsem1)))
+    ; Extract EIP after executing the instruction.
+    (let ((othereip2 (bv-add othereip1 otherinsn1len)))
+
+    ; ----------------------
+    ; OTHER: FINALIZE STATE AND EIP
+    ; ----------------------
+
+    ; Call the final state "finalstate" (for convenience).
+    (let ((otherfinalstate otherstate2))
+    ; Call the final EIP "finaleip" (for convenience).
+    (let ((otherfinaleip othereip2))
+
+    ; --------------------------------------------------
+    ; ISSUE CONSTRAINTS ABOUT FUNCTIONALITY AND ENCODING
+    ; --------------------------------------------------
+
+    (and
+      ; 0-length instructions are invalid; both instructions must be valid.
+      (not (= insn0len 0x00))
+      (not (= insn1len 0x00))
+      
+      ; -----------------------------------
+      ; CONSTRAINTS REGARDING FUNCTIONALITY
+      ; -----------------------------------
+      
+      ; Effect on state: r0 becomes 0x12345678; all other registers preserved.
+      (= (getstate 0b000 finalstate) (bv-add r0 0x00000001))
+      (= (getstate 0b001 finalstate) r1)
+      (= (getstate 0b010 finalstate) r2)
+      (= (getstate 0b011 finalstate) r3)
+      (= (getstate 0b100 finalstate) r4)
+      (= (getstate 0b101 finalstate) r5)
+      (= (getstate 0b110 finalstate) r6)
+      (= (getstate 0b111 finalstate) r7)
+
+      ; OTHER
+      (=> (and
+      (not (= otherinsn0len 0x00))
+      (not (= otherinsn1len 0x00))
+      ; Effect on state: r0 becomes 0x12345678; all other registers preserved.
+      (= (getstate 0b000 otherfinalstate) (bv-add r0 0x00000001))
+      (= (getstate 0b001 otherfinalstate) r1)
+      (= (getstate 0b010 otherfinalstate) r2)
+      (= (getstate 0b011 otherfinalstate) r3)
+      (= (getstate 0b100 otherfinalstate) r4)
+      (= (getstate 0b101 otherfinalstate) r5)
+      (= (getstate 0b110 otherfinalstate) r6)
+      (= (getstate 0b111 otherfinalstate) r7))
+      (bv-le finaleip otherfinaleip))
+
+      ; ------------------------------
+      ; CONSTRAINTS REGARDING ENCODING
+      ; ------------------------------
+      ; None of the bytes are 0x12
+      ; (=> (bv-lt idx finaleip) (/= (get-byte idx) 0x12))
+      ; None of the bytes are 0x34
+      ; (=> (bv-lt idx finaleip) (/= (get-byte idx) 0x34))
+      ; None of the bytes are 0x56
+      ; (=> (bv-lt idx finaleip) (/= (get-byte idx) 0x56))
+      ; None of the bytes are 0x78
+      ; (=> (bv-lt idx finaleip) (/= (get-byte idx) 0x78))
+      ; None of the bytes are 0x00 (commented out)
+      ; (=> (bv-lt idx finaleip) (/= (get-byte idx) 0x00))
+    ) ; end and
+    )))))))))))) ; end let * 12
+    ))))))))))) ; end OTHER let * 10
+  ) ; end forall
+) ; end assert
+
+; Solve the constraint system
+(ef-solve)
+
+; Produce a model, i.e., values for bytecode00-bytecodeFF.
+; This statement will crash yices if (ef-solve) returned unsatisfiable.
+(show-model)

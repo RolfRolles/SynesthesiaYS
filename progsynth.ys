@@ -1,0 +1,29 @@
+; These are the "components" as described in the presentation, i.e., the 
+; existentially-quantified variables.
+
+; b1: If true, first operation is - (NEG), otherwise it is ~ (NOT).
+(define b1::bool)
+; b2: If true, second operation is - (NEG), otherwise it is ~ (NOT).
+(define b2::bool)
+
+; The main assertion that b1 and b2 must satisfy:
+(assert
+  ; The "forall input" part of the formula: for all 32-bit values of x ...
+  (forall (x::(bitvector 32))
+    ; Let y be the result of the first operation, dictated by b1
+    (let ((y (ite b1 (bv-neg x) (bv-not x))))
+    ; Let z be the result of the second operation, dictated by b2
+    (let ((z (ite b2 (bv-neg y) (bv-not y))))
+    ; The output, z, must be equal to the input x plus one.
+    (= z (bv-add x 0x00000001))
+    )
+    )
+  )
+)
+
+; This command askes Yices to solve the problem laid out above
+(ef-solve)
+
+; If the problem was solvable, this command causes the values of b1 and b2 to 
+; be printed.
+(show-model)
